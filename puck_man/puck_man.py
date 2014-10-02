@@ -82,7 +82,7 @@ class Path():
         for x in range(44 + pr, 180 - pr):
             self.path_list.append((x, r8y))
 
-        for x in range(188 + pr, WINDOW_W - pr):
+        for x in range(188 + pr, WINDOW_W - bd - pr):
             self.path_list.append((x, r8y))
 
         r9y = 204 + pr
@@ -110,12 +110,14 @@ class Path():
         for y in range(158 + pr, 196 - pr):
             self.path_list.append((c1x, y))
 
+        # looks like this is where the dead pixel is coming from.
         for y in range(204 + pr, WINDOW_H - pr - bd):
             self.path_list.append((c1x, y))
 
         c2x = 36 - pr
-        for y in range(180 + pr, 76 - pr):
+        for y in range(180 + pr, 220 - pr):
             self.path_list.append((c2x, y))
+
 
         c3x = 60 - pr
         for y in range(bd + pr, 220 - pr):
@@ -138,7 +140,7 @@ class Path():
             self.path_list.append((c5x, y))
         for y in range(156 + pr, 196 - pr):
             self.path_list.append((c5x, y))
-        for y in range(204 + pr, WINDOW_H - pr):
+        for y in range(204 + pr, WINDOW_H - pr - bd):
             self.path_list.append((c5x, y))
 
         c6x = WINDOW_W - 108 + pr
@@ -148,7 +150,7 @@ class Path():
             self.path_list.append((c6x, y))
         for y in range(156 + pr, 196 - pr):
             self.path_list.append((c6x, y))
-        for y in range(204 + pr, WINDOW_H - pr):
+        for y in range(204 + pr, WINDOW_H - pr - bd):
             self.path_list.append((c6x, y))
             
         c7x = WINDOW_W - 84 + pr
@@ -165,12 +167,18 @@ class Path():
         for y in range(bd + pr, 220 - pr):
             self.path_list.append((c8x, y))
 
-        c9x = WINDOW_W - 60 + pr
-        for y in range(180 + pr, 76 - pr):
+        c9x = WINDOW_W - 36 + pr
+        for y in range(180 + pr, 220 - pr):
             self.path_list.append((c9x, y))
 
         c10x = WINDOW_W - 20 + pr
         for y in range(bd + pr, 76 - pr):
+            self.path_list.append((c10x, y))
+
+        for y in range(158 + pr, 196 - pr):
+            self.path_list.append((c10x, y))
+
+        for y in range(204 + pr, WINDOW_H - pr - bd):
             self.path_list.append((c10x, y))
 
     def draw_path(self):
