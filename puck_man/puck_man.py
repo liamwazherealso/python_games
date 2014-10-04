@@ -7,6 +7,7 @@ import pygame, sys
 from pygame.locals import *
 
 
+
 WINDOW_H = 248
 WINDOW_W = 224
 
@@ -14,6 +15,11 @@ FPS = 60
 FPSCLOCK = pygame.time.Clock()
 displaySurface = pygame.display.set_mode((WINDOW_W, WINDOW_H))
 GREEN = pygame.Color(0,255,0)
+
+UP = 'up'
+DOWN = 'down'
+LEFT = 'left'
+RIGHT = 'right'
 
 class Path():
 
@@ -152,7 +158,7 @@ class Path():
             self.path_list.append((c6x, y))
         for y in range(204 + pr, WINDOW_H - pr - bd):
             self.path_list.append((c6x, y))
-            
+
         c7x = WINDOW_W - 84 + pr
         for y in range(36 + pr, 76 - pr):
             self.path_list.append((c7x, y))
@@ -182,13 +188,75 @@ class Path():
             self.path_list.append((c10x, y))
 
     def draw_path(self):
+        """
+        debug: see if coordinates were correct
+        :return:
+        """
         for coordinate in self.path_list:
             pygame.draw.line(displaySurface, GREEN, coordinate, coordinate)
+
+
+
+path = Path().path_list
+
+class Character(pygame.sprite.Sprite):
+    """
+    Base class for characters, this is a child of the Sprite class defined in pygame, inheriting this allows us to use
+    the sprite interface which is basically all the methods a simple sprite needs.
+    """
+
+    def __init__(self, name, pos):
+        self.name = name
+        self.pos = pos
+        self.thresh = 4
+
+    def move(self, dir):
+        """
+        Moves the character, thresh allows for char not to be exactly on the correct pixel line to change direction.
+        Useful for the player (they don't have to align perfectly with a vertical line if they want to go in a vertical
+        direction.)
+        :param dir:
+        :return:
+        """
+        if dir == UP:
+            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
+                if (x, self.pos[1]) in path and (x, self.pos[1] - 1) in path:
+                    self.pos = (x, self.pos[1] - 1)
+        elif dir == DOWN:
+            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
+                if (x, self.pos[1]) in path and (x, self.pos[1] + 1) in path:
+                    self.pos = (x, self.pos[1] + 1)
+        elif dir == LEFT:
+            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
+                if (self.pos[0], y) in path and (self.pos[0] - 1, y) in path:
+                    self.pos = (self.pos[0] - 1, y)
+        elif dir == RIGHT:
+            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
+                if (self.pos[0], y) in path and (self.pos[0] + 1, y) in path:
+                    self.pos = (self.pos[0] + 1, y)
+
+
+class PuckMan(Character):
+    def __init__(self, name, pos):
+        self.name = "Puck Man"
+        self.pos = (WINDOW_W / 2, 188)
+        self.image = pygame.image.load('pm_1.png')
+        self.surf = pygame.Surface([12, 13])
+        self.thresh = 4
+
+    def add(self):
+        self.surf.blit(self.image, (0, 0))
+        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
+
+
+
 
 class Game():
     def __init__(self):
         pygame.init()
-        self.path = Path()
+        self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
+
+        self.down_press = self.up_press =  self.left_press = self.right_press = False
 
         pygame.display.set_caption('Puck Man')
         self.background = pygame.image.load('puck_man_background.png')
@@ -197,13 +265,46 @@ class Game():
         while True:
             for event in pygame.event.get():
                 if event.type == KEYDOWN:
-                    pass
+                    if event.key == K_UP:
+                        self.up_press = True
+
+                    elif event.key == K_DOWN:
+                        self.down_press = True
+
+                    elif event.key == K_LEFT:
+                        self.left_press = True
+
+                    elif event.key == K_RIGHT:
+                        self.right_press = True
+
+                elif event.type == KEYUP:
+                    if event.key == K_UP:
+                        self.up_press = False
+
+                    elif event.key == K_DOWN:
+                        self.down_press = False
+
+                    elif event.key == K_LEFT:
+                        self.left_press = False
+
+                    elif event.key == K_RIGHT:
+                        self.right_press = False
 
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
+
+            if self.up_press:
+                self.puckMan.move(UP)
+            elif self.down_press:
+                self.puckMan.move(DOWN)
+            elif self.left_press:
+                self.puckMan.move(LEFT)
+            elif self.right_press:
+                self.puckMan.move(RIGHT)
+
             displaySurface.blit(self.background, (0, 0))
-            self.path.draw_path()
+            self.puckMan.add()
             pygame.display.update()
             FPSCLOCK.tick(FPS)
 

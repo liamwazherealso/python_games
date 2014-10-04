@@ -91,6 +91,7 @@ class Player():
 
 
     def ai(self):
+
         if self.state == UP:
             if self.game.game_ball.pos[1] > self.top_l_y + PLAYER_HEIGHT/2:
                 self.move(DOWN)
@@ -224,14 +225,17 @@ class game:
                     elif event.key == K_DOWN:
                         self.pressed_down = True
 
-                    elif event.key == K_q:
-                        self.terminate()
+
                 elif event.type == KEYUP:
                     if event.key == K_UP:
                         self.pressed_up = False
 
                     elif event.key == K_DOWN:
                         self.pressed_down = False
+
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
 
             if self.pressed_up:
                 self.lplayer.move(UP)
@@ -262,13 +266,6 @@ class game:
         else:
             self.score[1] += 1
             self.reset()
-
-
-
-    def terminate(self):
-        pygame.quit()
-        sys.exit()
-
 
 if __name__ == "__main__":
     Game = game()
