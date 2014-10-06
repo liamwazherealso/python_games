@@ -7,7 +7,6 @@ import pygame, sys
 from pygame.locals import *
 
 
-
 WINDOW_H = 248
 WINDOW_W = 224
 
@@ -20,6 +19,7 @@ UP = 'up'
 DOWN = 'down'
 LEFT = 'left'
 RIGHT = 'right'
+NONE = 'none'
 
 class Path():
 
@@ -113,7 +113,7 @@ class Path():
         for y in range(bd + pr, 76 - pr):
             self.path_list.append((c1x, y))
 
-        for y in range(158 + pr, 196 - pr):
+        for y in range(156 + pr, 196 - pr):
             self.path_list.append((c1x, y))
 
         # looks like this is where the dead pixel is coming from.
@@ -124,9 +124,8 @@ class Path():
         for y in range(180 + pr, 220 - pr):
             self.path_list.append((c2x, y))
 
-
         c3x = 60 - pr
-        for y in range(bd + pr, 220 - pr):
+        for y in range(bd + pr, 221 - pr):
             self.path_list.append((c3x, y))
 
         c4x = 84 - pr
@@ -166,7 +165,7 @@ class Path():
         for y in range(84 + pr, 172 - pr):
             self.path_list.append((c7x, y))
 
-        for y in range(180 + pr, 220 - pr):
+        for y in range(180 + pr, 221 - pr):
             self.path_list.append((c7x, y))
 
         c8x = WINDOW_W - 60 + pr
@@ -181,10 +180,10 @@ class Path():
         for y in range(bd + pr, 76 - pr):
             self.path_list.append((c10x, y))
 
-        for y in range(158 + pr, 196 - pr):
+        for y in range(156 + pr, 198 - pr):
             self.path_list.append((c10x, y))
 
-        for y in range(204 + pr, WINDOW_H - pr - bd):
+        for y in range(204 + pr, WINDOW_H + 1 - pr - bd):
             self.path_list.append((c10x, y))
 
     def draw_path(self):
@@ -194,8 +193,6 @@ class Path():
         """
         for coordinate in self.path_list:
             pygame.draw.line(displaySurface, GREEN, coordinate, coordinate)
-
-
 
 path = Path().path_list
 
@@ -209,6 +206,7 @@ class Character(pygame.sprite.Sprite):
         self.name = name
         self.pos = pos
         self.thresh = 4
+        self.dir = 'static'
 
     def move(self, dir):
         """
@@ -218,40 +216,54 @@ class Character(pygame.sprite.Sprite):
         :param dir:
         :return:
         """
+        valid = False
         if dir == UP:
             for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
                 if (x, self.pos[1]) in path and (x, self.pos[1] - 1) in path:
                     self.pos = (x, self.pos[1] - 1)
+                    self.dir = dir
+                    valid = True
+
         elif dir == DOWN:
             for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
                 if (x, self.pos[1]) in path and (x, self.pos[1] + 1) in path:
                     self.pos = (x, self.pos[1] + 1)
+                    self.dir = dir
+                    valid = True
+
         elif dir == LEFT:
             for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
                 if (self.pos[0], y) in path and (self.pos[0] - 1, y) in path:
                     self.pos = (self.pos[0] - 1, y)
+                    self.dir = dir
+                    valid = True
+
         elif dir == RIGHT:
             for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
                 if (self.pos[0], y) in path and (self.pos[0] + 1, y) in path:
                     self.pos = (self.pos[0] + 1, y)
+                    self.dir = dir
+                    valid = True
+
+        return valid
 
 
 class PuckMan(Character):
+
     def __init__(self, name, pos):
         self.name = "Puck Man"
         self.pos = (WINDOW_W / 2, 188)
         self.image = pygame.image.load('pm_1.png')
         self.surf = pygame.Surface([12, 13])
         self.thresh = 4
+        self.dir = 'static'
+        self.surf.blit(self.image, (0, 0))
 
     def add(self):
-        self.surf.blit(self.image, (0, 0))
         displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
 
-
-
-
 class Game():
+
     def __init__(self):
         pygame.init()
         self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
@@ -261,8 +273,12 @@ class Game():
         pygame.display.set_caption('Puck Man')
         self.background = pygame.image.load('puck_man_background.png')
 
+
+
     def main(self):
         while True:
+            #Set value for key true if pushed down, false if up
+
             for event in pygame.event.get():
                 if event.type == KEYDOWN:
                     if event.key == K_UP:
@@ -294,15 +310,21 @@ class Game():
                     pygame.quit()
                     sys.exit()
 
+            # move holds whether or not the movement worked
+            move = False
             if self.up_press:
-                self.puckMan.move(UP)
+                move = self.puckMan.move(UP)
             elif self.down_press:
-                self.puckMan.move(DOWN)
+                move = self.puckMan.move(DOWN)
             elif self.left_press:
-                self.puckMan.move(LEFT)
+                move = self.puckMan.move(LEFT)
             elif self.right_press:
-                self.puckMan.move(RIGHT)
+                move = self.puckMan.move(RIGHT)
+            # no move worked, so we move in the direction it was before
+            if not move:
+                self.puckMan.move(self.puckMan.dir)
 
+            # add surfaces then render directly after
             displaySurface.blit(self.background, (0, 0))
             self.puckMan.add()
             pygame.display.update()
