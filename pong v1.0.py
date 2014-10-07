@@ -55,6 +55,7 @@ class Player():
         self.side = side
         self.game = game
         self.state = state
+        self.delay = 3
 
         if side == LEFT:
             self.top_l_x = SIDE_BOUNDARY
@@ -74,14 +75,17 @@ class Player():
 
     def move(self, dir):
 
-        if dir == DOWN and self.bot_r_y + self.speed <= Y_BOT_BOUNDARY:
-            self.top_l_y += self.speed
-            self.bot_r_y += self.speed
+        if self.delay == 0:
+            if dir == DOWN and self.bot_r_y + self.speed <= Y_BOT_BOUNDARY:
+                self.top_l_y += self.speed
+                self.bot_r_y += self.speed
 
 
-        elif dir == UP and self.top_l_y - self.speed >= Y_TOP_BOUNDARY:
-            self.top_l_y -= self.speed
-            self.bot_r_y -= self.speed
+            elif dir == UP and self.top_l_y - self.speed >= Y_TOP_BOUNDARY:
+                self.top_l_y -= self.speed
+                self.bot_r_y -= self.speed
+        else:
+            self.delay -= 1
 
     def rect(self):
         if self.side == LEFT:
@@ -91,7 +95,6 @@ class Player():
 
 
     def ai(self):
-
         if self.state == UP:
             if self.game.game_ball.pos[1] > self.top_l_y + PLAYER_HEIGHT/2:
                 self.move(DOWN)
@@ -202,6 +205,7 @@ class game:
 
         self.lplayer = Player(self, LEFT, DOWN)
         self.rplayer = Player(self, RIGHT, UP)
+        self.rplayer.delay = 3
         self.game_ball = Ball(self, self.lplayer, self.rplayer, self.lplayer)
 
     def reset(self):
