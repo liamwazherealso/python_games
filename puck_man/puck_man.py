@@ -13,13 +13,20 @@ WINDOW_W = 224
 FPS = 60
 FPSCLOCK = pygame.time.Clock()
 displaySurface = pygame.display.set_mode((WINDOW_W, WINDOW_H))
-GREEN = pygame.Color(0,255,0)
+
+GREEN = pygame.Color(0, 255, 0)
+PELLET_COLOR = pygame.Color(250, 185, 176)
+RED = pygame.Color(255, 0, 0)
+
+pel_group = pygame.sprite.Group
 
 UP = 'up'
 DOWN = 'down'
 LEFT = 'left'
 RIGHT = 'right'
 NONE = 'none'
+
+GAME_SCORE = 0
 
 class Path():
 
@@ -30,161 +37,350 @@ class Path():
     def __init__(self):
 
         self.path_list = []
+        self.pell_list = []
 
         # the boundary is 4 pixels, path dia is 8
         bd = 4
         pr = 8
 
+        count = 0
         r1y = pr + bd
         for x in range(pr + bd, 108 - pr):
-            self.path_list.append((x, r1y))
+            temp = (x, r1y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(116 + pr, WINDOW_W - pr - bd):
-            self.path_list.append((x, r1y))
+            temp = (x, r1y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r2y = 36 + pr
         for x in range(pr + bd, WINDOW_W - pr - bd):
-            self.path_list.append((x, r2y))
+            temp = (x, r2y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r3y = 60 + pr
         for x in range(pr + bd, 60 - pr):
-            self.path_list.append((x, r3y))
+            temp = (x, r3y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(68 + pr, 108 - pr):
-            self.path_list.append((x, r3y))
+            temp = (x, r3y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(116 + pr, 156 - pr):
-            self.path_list.append((x, r3y))
+            temp = (x, r3y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(164 + pr, WINDOW_W - pr - bd):
-            self.path_list.append((x, r3y))
+            temp = (x, r3y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r4y = 84 + pr
         for x in range(68 + pr, 156 - pr):
-            self.path_list.append((x, r4y))
+            temp = (x, r4y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r5y = 108 + pr
         for x in range(pr, 84 - pr):
-            self.path_list.append((x, r5y))
+            temp = (x, r5y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(140 + pr, WINDOW_W - pr):
-            self.path_list.append((x, r5y))
+            temp = (x, r5y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r6y = 132 + pr
         for x in range(68 + pr, 156 - pr):
-            self.path_list.append((x, r6y))
+            temp = (x, r6y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r7y = 156 + pr
         for x in range(bd + pr, 108 - pr):
-            self.path_list.append((x, r7y))
+            temp = (x, r7y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(116 + pr, WINDOW_W - bd - pr):
-            self.path_list.append((x, r7y))
+            temp = (x, r7y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r8y = 180 + pr
+
         for x in range(bd + pr, 36 - pr):
-            self.path_list.append((x, r8y))
+            temp = (x, r8y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(44 + pr, 180 - pr):
-            self.path_list.append((x, r8y))
+            temp = (x, r8y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(188 + pr, WINDOW_W - bd - pr):
-            self.path_list.append((x, r8y))
+            temp = (x, r8y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r9y = 204 + pr
         for x in range(bd + pr, 60 - pr):
-            self.path_list.append((x, r9y))
+            temp = (x, r9y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(68 + pr, 108 - pr):
-            self.path_list.append((x, r9y))
+            temp = (x, r9y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(116 + pr, 156 - pr):
-            self.path_list.append((x, r9y))
+            temp = (x, r9y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for x in range(164 + pr, 220 - pr):
-            self.path_list.append((x, r9y))
+            temp = (x, r9y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         r10y = 228 + pr
         for x in range(bd + pr, WINDOW_W - bd - pr):
-            self.path_list.append((x, r10y))
+            temp = (x, r10y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         # adding columns
         c1x = 20 - pr
         for y in range(bd + pr, 76 - pr):
-            self.path_list.append((c1x, y))
+            temp = (c1x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for y in range(156 + pr, 196 - pr):
-            self.path_list.append((c1x, y))
+            temp = (c1x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         # looks like this is where the dead pixel is coming from.
         for y in range(204 + pr, WINDOW_H - pr - bd):
-            self.path_list.append((c1x, y))
+            temp = (c1x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c2x = 36 - pr
         for y in range(180 + pr, 220 - pr):
-            self.path_list.append((c2x, y))
+            temp = (c2x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c3x = 60 - pr
         for y in range(bd + pr, 221 - pr):
-            self.path_list.append((c3x, y))
+            temp = (c3x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c4x = 84 - pr
         for y in range(36 + pr, 76 - pr):
-            self.path_list.append((c4x, y))
+            temp = (c4x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for y in range(84 + pr, 172 - pr):
-            self.path_list.append((c4x, y))
+            temp = (c4x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for y in range(180 + pr, 220 - pr):
-            self.path_list.append((c4x, y))
+            temp = (c4x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c5x = 108 - pr
         for y in range(bd + pr, 52 - pr):
-            self.path_list.append((c5x, y))
+            temp = (c5x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
+
         for y in range(60 + pr, 100 - pr):
-            self.path_list.append((c5x, y))
+            temp = (c5x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
+
         for y in range(156 + pr, 196 - pr):
-            self.path_list.append((c5x, y))
+            temp = (c5x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
+
         for y in range(204 + pr, WINDOW_H - pr - bd):
-            self.path_list.append((c5x, y))
+            temp = (c5x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c6x = WINDOW_W - 108 + pr
         for y in range(bd + pr, 52 - pr):
-            self.path_list.append((c6x, y))
+            temp = (c6x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
+
         for y in range(60 + pr, 100 - pr):
-            self.path_list.append((c6x, y))
+            temp = (c6x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
+
         for y in range(156 + pr, 196 - pr):
-            self.path_list.append((c6x, y))
+            temp = (c6x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
+
         for y in range(204 + pr, WINDOW_H - pr - bd):
-            self.path_list.append((c6x, y))
+            temp = (c6x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c7x = WINDOW_W - 84 + pr
-        for y in range(36 + pr, 76 - pr):
-            self.path_list.append((c7x, y))
+        for y in range(36 + pr, 77 - pr):
+            temp = (c7x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for y in range(84 + pr, 172 - pr):
-            self.path_list.append((c7x, y))
+            temp = (c7x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for y in range(180 + pr, 221 - pr):
-            self.path_list.append((c7x, y))
+            temp = (c7x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c8x = WINDOW_W - 60 + pr
         for y in range(bd + pr, 220 - pr):
-            self.path_list.append((c8x, y))
+            temp = (c8x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c9x = WINDOW_W - 36 + pr
         for y in range(180 + pr, 220 - pr):
-            self.path_list.append((c9x, y))
+            temp = (c9x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         c10x = WINDOW_W - 20 + pr
-        for y in range(bd + pr, 76 - pr):
-            self.path_list.append((c10x, y))
+        for y in range(bd + pr, 77 - pr):
+            temp = (c10x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
-        for y in range(156 + pr, 198 - pr):
-            self.path_list.append((c10x, y))
+        for y in range(156 + pr, 197 - pr):
+            temp = (c10x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
         for y in range(204 + pr, WINDOW_H + 1 - pr - bd):
-            self.path_list.append((c10x, y))
+            temp = (c10x, y)
+            self.path_list.append(temp)
+            if count % 8 == 0:
+                self.pell_list.append(temp)
+            count += 1
 
     def draw_path(self):
         """
@@ -194,7 +390,49 @@ class Path():
         for coordinate in self.path_list:
             pygame.draw.line(displaySurface, GREEN, coordinate, coordinate)
 
+        for coordinate in self.pell_list:
+            pygame.draw.line(displaySurface, RED, coordinate, coordinate)
+
+pell_path = Path().pell_list
 path = Path().path_list
+
+class Pellet(pygame.sprite.Sprite):
+    """
+    The pellets that that puck man eats.
+    """
+
+    def __init__(self, pos):
+        self.pos = pos
+        self.draw = True
+
+    def kill(self):
+        GAME_SCORE += 200
+        self.draw = False
+
+    def pell_maker(self):
+        """
+        Adds all pellets for games in a group which it returns
+        """
+
+        l = []
+        for coordinate in pell_path:
+            l.append(Small_Pellet(coordinate))
+
+        for x in l:
+            pel_group.add(Small_Pellet)
+
+
+class Small_Pellet(Pellet):
+
+    def draw(self):
+        pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 1)
+
+class Big_Pellet(Pellet):
+
+    def add(self):
+        pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 2)
+
+
 
 class Character(pygame.sprite.Sprite):
     """
@@ -274,7 +512,6 @@ class Game():
         self.background = pygame.image.load('puck_man_background.png')
 
 
-
     def main(self):
         while True:
             #Set value for key true if pushed down, false if up
@@ -325,7 +562,11 @@ class Game():
                 self.puckMan.move(self.puckMan.dir)
 
             # add surfaces then render directly after
+
             displaySurface.blit(self.background, (0, 0))
+            test = Pellet((0,0))
+            test.pell_maker()
+            test.pell_draw()
             self.puckMan.add()
             pygame.display.update()
             FPSCLOCK.tick(FPS)
