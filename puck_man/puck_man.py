@@ -1,7 +1,8 @@
 #Did you know that the original name for Pac-Man was Puck-Man? You'd think it was because he looks like a hockey puck
 # but it actually comes from the Japanese phrase 'Paku-Paku,' which means to flap one's mouth open and closed. They
 # changed it because they thought Puck-Man would be too easy to vandalize, you know, like people could just scratch off
-#  the P and turn it into an F or whatever. - Scott Pilgrim vs. The world
+# the P and turn it into an F or whatever. - Scott Pilgrim vs. The world
+import glob
 
 import pygame, sys
 from pygame.locals import *
@@ -18,7 +19,7 @@ GREEN = pygame.Color(0, 255, 0)
 PELLET_COLOR = pygame.Color(250, 185, 176)
 RED = pygame.Color(255, 0, 0)
 
-pel_group = pygame.sprite.Group
+pel_group = pygame.sprite.Group()
 
 UP = 'up'
 DOWN = 'down'
@@ -402,37 +403,37 @@ class Pellet(pygame.sprite.Sprite):
     """
 
     def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self)
         self.pos = pos
-        self.draw = True
+        self.alive = True
 
     def kill(self):
-        GAME_SCORE += 200
-        self.draw = False
+        self.alive = False
 
     def pell_maker(self):
         """
         Adds all pellets for games in a group which it returns
         """
 
-        l = []
         for coordinate in pell_path:
-            l.append(Small_Pellet(coordinate))
+            Small_Pellet(coordinate).add(pel_group)
 
-        for x in l:
-            pel_group.add(Small_Pellet)
+    def pell_draw(self):
+        for pellet in pel_group:
+            if pellet.alive:
+                pellet.draw()
 
 
 class Small_Pellet(Pellet):
 
     def draw(self):
-        pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 1)
+
+        pygame.draw.rect(displaySurface, PELLET_COLOR, (self.pos[0] - 1, self.pos[1] - 1, 2, 2))
 
 class Big_Pellet(Pellet):
 
-    def add(self):
+    def draw(self):
         pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 2)
-
-
 
 class Character(pygame.sprite.Sprite):
     """
@@ -491,13 +492,37 @@ class PuckMan(Character):
     def __init__(self, name, pos):
         self.name = "Puck Man"
         self.pos = (WINDOW_W / 2, 188)
-        self.image = pygame.image.load('pm_1.png')
         self.surf = pygame.Surface([12, 13])
         self.thresh = 4
         self.dir = 'static'
-        self.surf.blit(self.image, (0, 0))
+
+        self.ani_speed_init = 10
+        self.ani_speed = self.ani_speed_init
+        self.ani = glob.glob("img/pm*.png")
+        self.ani.sort()
+        self.ani_pos=0
+        self.ani_max = len(self.ani)-1
+
+        self.image = pygame.image.load(self.ani[self.ani_pos])
+        self.add()
 
     def add(self):
+        if self.dir == LEFT:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani[self.ani_pos])
+
+        self.surf.blit(self.image, (0,0))
+
+        if self.ani_pos == self.ani_max:
+            self.ani_pos = 0
+        else:
+            self.ani_pos += 1
+
+        if self.ani_speed == 0:
+            self.ani_speed = self.ani_speed_init
+        else:
+            self.ani_speed -= 1
+
         displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
 
 class Game():
@@ -507,7 +532,8 @@ class Game():
         self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
 
         self.down_press = self.up_press =  self.left_press = self.right_press = False
-
+        self.pellet = Pellet((0, 0))
+        self.pellet.pell_maker()
         pygame.display.set_caption('Puck Man')
         self.background = pygame.image.load('puck_man_background.png')
 
@@ -564,9 +590,8 @@ class Game():
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
-            test = Pellet((0,0))
-            test.pell_maker()
-            test.pell_draw()
+
+            self.pellet.pell_draw()
             self.puckMan.add()
             pygame.display.update()
             FPSCLOCK.tick(FPS)
