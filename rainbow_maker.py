@@ -127,7 +127,7 @@ if __name__ == "__main__":
             if next_answer == "y":
                 g_order = raw_input("What would you like the order to be?\n(Give a string of 2 numbers, "
                                     "representing the order r/g.\n")
-                
+
                 if g_order.isalnum() and len(g_order) == 2:
                     # casting the elements of the answer into a int and using them as arguments
                     Gradient.gradient(int(g_order[0]), int(g_order[1]))
