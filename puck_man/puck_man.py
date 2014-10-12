@@ -498,20 +498,53 @@ class PuckMan(Character):
 
         self.ani_speed_init = 10
         self.ani_speed = self.ani_speed_init
-        self.ani = glob.glob("img/pm*.png")
-        self.ani.sort()
-        self.ani_pos=0
-        self.ani_max = len(self.ani)-1
 
-        self.image = pygame.image.load(self.ani[self.ani_pos])
+        self.ani_l = glob.glob("img/pm_l*.png")
+        self.ani_l.sort()
+        temp = self.ani_l
+        self.ani_l.reverse()
+        self.ani_l.extend(temp)
+
+        self.ani_r = glob.glob("img/pm_r*.png")
+        self.ani_r.sort()
+        temp = self.ani_r
+        self.ani_r.reverse()
+        self.ani_r.extend(temp)
+
+        self.ani_u = glob.glob("img/pm_u*.png")
+        self.ani_u.sort()
+        temp = self.ani_u
+        self.ani_u.reverse()
+        self.ani_u.extend(temp)
+
+        self.ani_d = glob.glob("img/pm_d*.png")
+        self.ani_d.sort()
+        temp = self.ani_d
+        self.ani_d.reverse()
+        self.ani_d.extend(temp)
+
+
+        self.ani_pos = 0
+        self.ani_max = len(self.ani_l)-1
+
+        self.image = pygame.image.load(self.ani_l[self.ani_pos])
         self.add()
 
     def add(self):
         if self.dir == LEFT:
             if self.ani_speed == 0:
-                self.image = pygame.image.load(self.ani[self.ani_pos])
-
-        self.surf.blit(self.image, (0,0))
+                self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        elif self.dir == RIGHT:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_r[self.ani_pos])
+        elif self.dir == UP:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_u[self.ani_pos])
+        elif self.dir == DOWN:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_d[self.ani_pos])
+        self.surf.fill((0, 0, 0))
+        self.surf.blit(self.image, (0, 0))
 
         if self.ani_pos == self.ani_max:
             self.ani_pos = 0
@@ -522,6 +555,7 @@ class PuckMan(Character):
             self.ani_speed = self.ani_speed_init
         else:
             self.ani_speed -= 1
+
 
         displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
 
