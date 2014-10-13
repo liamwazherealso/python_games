@@ -222,7 +222,6 @@ class Path():
                 self.pell_list.append(temp)
             count += 1
 
-        count = 0
         # adding columns
         c1x = 20 - pr
         count = 0
@@ -547,7 +546,6 @@ class Character(pygame.sprite.Sprite):
             self.pos = (WINDOW_W - 8, 116)
         elif self.pos == (WINDOW_W - 8, 116):
             self.pos = (8, 116)
-        print(self.pos[0], self.pos[1])
         return valid
 
 
