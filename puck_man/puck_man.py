@@ -627,18 +627,15 @@ class PuckMan(Character):
         self.add()
 
     def die(self):
-        print "DIE"
         self.dead = True
         self.ani_pos = 0
-        self.ani_speed = 10
-        self.cnt = len(self.ani_death)
+        self.ani_speed = 0
+        self.cnt = 8
         self.c = False
         self.dir = "hoopla"
 
 
     def add(self):
-        print "ani_pos " + str(self.ani_pos)
-
         if self.dir == LEFT and not self.dead:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_l[self.ani_pos])
@@ -661,7 +658,6 @@ class PuckMan(Character):
                 self.ani_pos += 1
 
             if self.cnt == 0:
-                print 'DEATH'
                 self.c = True
 
         self.surf.fill((0, 0, 0))
@@ -672,10 +668,10 @@ class PuckMan(Character):
             self.ani_pos = 0
 
         elif self.dead and self.c:
-
             sleep(3)
             self.dead = False
             self.ani_pos = 0
+            self.dir = LEFT
 
         elif not self.dead:
             self.ani_pos += 1
