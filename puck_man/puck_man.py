@@ -3,7 +3,7 @@
 # changed it because they thought Puck-Man would be too easy to vandalize, you know, like people could just scratch off
 # the P and turn it into an F or whatever. - Scott Pilgrim vs. The world
 import glob
-
+from time import sleep
 import pygame, sys
 from pygame.locals import *
 
@@ -19,6 +19,7 @@ GREEN = pygame.Color(0, 255, 0)
 PELLET_COLOR = pygame.Color(250, 185, 176)
 RED = pygame.Color(255, 0, 0)
 BLUE = pygame.Color(0, 0, 255)
+WHITE = pygame.Color(255, 255, 255)
 
 pel_group = pygame.sprite.Group()
 
@@ -32,7 +33,8 @@ NONE = 'none'
 class Score():
     def __init__(self):
         self.score = 0
-        self.font = pygame.font.SysFont("comicsansms", 12)
+        self.font = pygame.font.SysFont("liberationserif", 10)
+        self.mes = self.font.render("HIGH SCORE", True, WHITE)
 
     def add(self, points):
         self.score += points
@@ -40,8 +42,9 @@ class Score():
 
     def render(self):
         msg = str(self.score)
-        surfScore = self.font.render(msg, True, BLUE)
-        displaySurface.blit(surfScore, (0, 0))
+        surfScore = self.font.render(msg, True, WHITE)
+        displaySurface.blit(self.mes, (WINDOW_W/2 - 25 , 0))
+        displaySurface.blit(surfScore, (WINDOW_W/2 - 10, 12))
 
 
 class Path():
@@ -584,6 +587,7 @@ class PuckMan(Character):
         self.surf = pygame.Surface([12, 13])
         self.thresh = 4
         self.dir = 'static'
+        self.dead = False
 
         self.ani_speed_init = 10
         self.ani_speed = self.ani_speed_init
@@ -612,6 +616,9 @@ class PuckMan(Character):
         self.ani_d.reverse()
         self.ani_d.extend(temp)
 
+        self.ani_death = glob.glob("img/pd_die*.png")
+        self.ani_death.sort()
+        self.ani_death
 
         self.ani_pos = 0
         self.ani_max = len(self.ani_l)-1
@@ -619,27 +626,60 @@ class PuckMan(Character):
         self.image = pygame.image.load(self.ani_l[self.ani_pos])
         self.add()
 
+    def die(self):
+        print "DIE"
+        self.dead = True
+        self.ani_pos = 0
+        self.ani_speed = 10
+        self.cnt = len(self.ani_death)
+        self.c = False
+        self.dir = "hoopla"
+
+
     def add(self):
-        if self.dir == LEFT:
+        print "ani_pos " + str(self.ani_pos)
+
+        if self.dir == LEFT and not self.dead:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_l[self.ani_pos])
-        elif self.dir == RIGHT:
+        elif self.dir == RIGHT and not self.dead:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_r[self.ani_pos])
-        elif self.dir == UP:
+        elif self.dir == UP and not self.dead:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_u[self.ani_pos])
-        elif self.dir == DOWN:
+        elif self.dir == DOWN and not self.dead:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_d[self.ani_pos])
+
+        if self.dead:
+
+            if self.ani_speed == 0:
+                print self.ani_pos
+                self.image = pygame.image.load(self.ani_death[self.ani_pos])
+                self.cnt -= 1
+                self.ani_pos += 1
+
+            if self.cnt == 0:
+                print 'DEATH'
+                self.c = True
 
         self.surf.fill((0, 0, 0))
         self.surf.blit(self.image, (0, 0))
 
-        if self.ani_pos == self.ani_max:
+
+        if self.ani_pos == self.ani_max and not self.dead:
             self.ani_pos = 0
-        else:
+
+        elif self.dead and self.c:
+
+            sleep(3)
+            self.dead = False
+            self.ani_pos = 0
+
+        elif not self.dead:
             self.ani_pos += 1
+
 
         if self.ani_speed == 0:
             self.ani_speed = self.ani_speed_init
@@ -684,6 +724,9 @@ class Game():
 
                     elif event.key == K_RIGHT:
                         self.right_press = True
+
+                    elif event.key == K_d:
+                        self.puckMan.die()
 
                 elif event.type == KEYUP:
                     if event.key == K_UP:
