@@ -8,7 +8,7 @@ import pygame, sys
 from pygame.locals import *
 
 
-WINDOW_H = 248
+WINDOW_H = 284
 WINDOW_W = 224
 
 FPS = 60
@@ -18,6 +18,7 @@ displaySurface = pygame.display.set_mode((WINDOW_W, WINDOW_H))
 GREEN = pygame.Color(0, 255, 0)
 PELLET_COLOR = pygame.Color(250, 185, 176)
 RED = pygame.Color(255, 0, 0)
+BLUE = pygame.Color(0, 0, 255)
 
 pel_group = pygame.sprite.Group()
 
@@ -27,7 +28,21 @@ LEFT = 'left'
 RIGHT = 'right'
 NONE = 'none'
 
-GAME_SCORE = 0
+
+class Score():
+    def __init__(self):
+        self.score = 0
+        self.font = pygame.font.SysFont("comicsansms", 12)
+
+    def add(self, points):
+        self.score += points
+        self.render()
+
+    def render(self):
+        msg = str(self.score)
+        surfScore = self.font.render(msg, True, BLUE)
+        displaySurface.blit(surfScore, (0, 0))
+
 
 class Path():
 
@@ -113,7 +128,7 @@ class Path():
             count += 1
 
         r5y = 108 + pr
-        count = 0
+        count = 4
         for x in range(pr, 84 - pr + 1):
             temp = (x, r5y)
             self.path_list.append(temp)
@@ -242,7 +257,7 @@ class Path():
 
         # looks like this is where the dead pixel is coming from.
         count = 0
-        for y in range(204 + pr, WINDOW_H - pr - bd + 1):
+        for y in range(204 + pr, WINDOW_H - pr - bd - 36 + 1):
             temp = (c1x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -318,7 +333,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H - pr - bd + 1):
+        for y in range(204 + pr, WINDOW_H - pr - bd - 36 + 1):
             temp = (c5x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -351,7 +366,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H - pr - bd + 1):
+        for y in range(204 + pr, WINDOW_H - pr - bd - 36 + 1):
             temp = (c6x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -419,7 +434,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H + 1 - pr - bd + 1):
+        for y in range(204 + pr, WINDOW_H -36 - pr - bd + 1):
             temp = (c10x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -436,6 +451,15 @@ class Path():
             else:
                 self.pell_list.append(temp)
 
+        temp = []
+        for pair in self.pell_list:
+            temp.append((pair[0], pair[1] + 24))
+        self.pell_list = temp
+
+        temp = []
+        for pair in self.path_list:
+            temp.append((pair[0], pair[1] + 24))
+        self.path_list = temp
 
     def draw_path(self):
         """
@@ -456,14 +480,16 @@ class Pellet(pygame.sprite.Sprite):
     The pellets that that puck man eats.
     """
 
-    def __init__(self, pos):
+    def __init__(self, pos, score):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pos
         self.alive = True
+        self.score = score
 
     def kill(self):
-
-        self.alive = False
+        if self.alive:
+            self.score.add(200)
+            self.alive = False
 
     def pell_maker(self):
         """
@@ -471,15 +497,15 @@ class Pellet(pygame.sprite.Sprite):
         """
 
         for coordinate in pell_path:
-            Small_Pellet(coordinate).add(pel_group)
+            Small_Pellet(coordinate, self.score).add(pel_group)
 
     def pell_draw(self):
         for pellet in pel_group:
             if pellet.alive:
                 pellet.draw()
 
-
 class Small_Pellet(Pellet):
+
 
     def draw(self):
         if self.alive:
@@ -542,18 +568,19 @@ class Character(pygame.sprite.Sprite):
                     self.dir = dir
                     valid = True
 
-        if self.pos == (8, 116):
-            self.pos = (WINDOW_W - 8, 116)
-        elif self.pos == (WINDOW_W - 8, 116):
-            self.pos = (8, 116)
+        if self.pos == (8, 140):
+            self.pos = (WINDOW_W - 8, 140)
+        elif self.pos == (WINDOW_W - 8, 140):
+            self.pos = (8, 140)
         return valid
+
 
 
 class PuckMan(Character):
 
     def __init__(self, name, pos):
         self.name = "Puck Man"
-        self.pos = (WINDOW_W / 2, 188)
+        self.pos = (WINDOW_W / 2, 188 + 24)
         self.surf = pygame.Surface([12, 13])
         self.thresh = 4
         self.dir = 'static'
@@ -628,13 +655,16 @@ class Game():
 
     def __init__(self):
         pygame.init()
+        self.score = Score()
+
         self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
 
         self.down_press = self.up_press =  self.left_press = self.right_press = False
-        self.pellet = Pellet((0, 0))
+        self.pellet = Pellet((0, 0), self.score)
         self.pellet.pell_maker()
         pygame.display.set_caption('Puck Man')
         self.background = pygame.image.load('puck_man_background.png')
+
 
 
     def main(self):
@@ -693,7 +723,7 @@ class Game():
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
-
+            self.score.render()
             self.pellet.pell_draw()
             self.puckMan.add()
             pygame.display.update()
