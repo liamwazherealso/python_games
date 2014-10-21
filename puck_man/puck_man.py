@@ -8,7 +8,7 @@ import pygame, sys
 from pygame.locals import *
 
 
-WINDOW_H = 284
+WINDOW_H = 292
 WINDOW_W = 224
 
 FPS = 60
@@ -28,6 +28,9 @@ DOWN = 'down'
 LEFT = 'left'
 RIGHT = 'right'
 NONE = 'none'
+pygame.mixer.init(44100, -16, 2, 2048)
+
+chompSnd = pygame.mixer.Sound('snd/chomp.wav')
 
 
 class Score():
@@ -260,7 +263,7 @@ class Path():
 
         # looks like this is where the dead pixel is coming from.
         count = 0
-        for y in range(204 + pr, WINDOW_H - pr - bd - 36 + 1):
+        for y in range(204 + pr, WINDOW_H - pr - bd - 42 + 1):
             temp = (c1x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -269,7 +272,7 @@ class Path():
 
         c2x = 36 - pr
         count = 0
-        for y in range(180 + pr, 220 - pr + 1):
+        for y in range(180 + pr, 220 - pr *2+ 1):
             temp = (c2x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -303,7 +306,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(180 + pr, 220 - pr + 1):
+        for y in range(180 + pr, 220 - pr*2 + 1):
             temp = (c4x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -336,7 +339,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H - pr - bd - 36 + 1):
+        for y in range(204 + pr, WINDOW_H - pr*2 - bd - 36 + 1):
             temp = (c5x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -361,7 +364,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(156 + pr, 196 - pr + 1):
+        for y in range(156 + pr, 196 - pr+ 1):
             temp = (c6x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -369,7 +372,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H - pr - bd - 36 + 1):
+        for y in range(204 + pr, WINDOW_H - pr*2 - bd - 36 + 1):
             temp = (c6x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -437,7 +440,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H -36 - pr - bd + 1):
+        for y in range(204 + pr, WINDOW_H -36 - pr*2 - bd + 1):
             temp = (c10x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -493,6 +496,7 @@ class Pellet(pygame.sprite.Sprite):
         if self.alive:
             self.score.add(200)
             self.alive = False
+            chompSnd.play()
 
     def pell_maker(self):
         """
@@ -588,6 +592,9 @@ class PuckMan(Character):
         self.thresh = 4
         self.dir = 'static'
         self.dead = False
+        self.lives = 2
+
+        self.lives_img = pygame.image.load("img/pm_l1.png")
 
         self.ani_speed_init = 10
         self.ani_speed = self.ani_speed_init
@@ -627,6 +634,7 @@ class PuckMan(Character):
         self.add()
 
     def die(self):
+        self.lives -= 1
         self.dead = True
         self.ani_pos = 0
         self.ani_speed = 0
@@ -682,6 +690,11 @@ class PuckMan(Character):
         else:
             self.ani_speed -= 1
 
+        x = 5
+        for int in range(self.lives):
+            displaySurface.blit(self.lives_img, (x, 276))
+            x += 14
+
         displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
 
     def rect(self):
@@ -708,34 +721,35 @@ class Game():
             #Set value for key true if pushed down, false if up
 
             for event in pygame.event.get():
-                if event.type == KEYDOWN:
-                    if event.key == K_UP:
-                        self.up_press = True
+                if not self.puckMan.dead:
+                    if event.type == KEYDOWN:
+                        if event.key == K_UP:
+                            self.up_press = True
 
-                    elif event.key == K_DOWN:
-                        self.down_press = True
+                        elif event.key == K_DOWN:
+                            self.down_press = True
 
-                    elif event.key == K_LEFT:
-                        self.left_press = True
+                        elif event.key == K_LEFT:
+                            self.left_press = True
 
-                    elif event.key == K_RIGHT:
-                        self.right_press = True
+                        elif event.key == K_RIGHT:
+                            self.right_press = True
 
-                    elif event.key == K_d:
-                        self.puckMan.die()
+                        elif event.key == K_d:
+                            self.puckMan.die()
 
-                elif event.type == KEYUP:
-                    if event.key == K_UP:
-                        self.up_press = False
+                    elif event.type == KEYUP:
+                        if event.key == K_UP:
+                            self.up_press = False
 
-                    elif event.key == K_DOWN:
-                        self.down_press = False
+                        elif event.key == K_DOWN:
+                            self.down_press = False
 
-                    elif event.key == K_LEFT:
-                        self.left_press = False
+                        elif event.key == K_LEFT:
+                            self.left_press = False
 
-                    elif event.key == K_RIGHT:
-                        self.right_press = False
+                        elif event.key == K_RIGHT:
+                            self.right_press = False
 
                 if event.type == QUIT:
                     pygame.quit()

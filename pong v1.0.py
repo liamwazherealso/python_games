@@ -182,7 +182,6 @@ class Ball:
             elif self.direction[1] == DOWN:
                 self.pos[1] += self.speed
 
-
     def render(self):
         self.bounce()
         DISPLAYSURF.blit(self.ball, (self.pos[0], self.pos[1]))
