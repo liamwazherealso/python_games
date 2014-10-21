@@ -60,6 +60,7 @@ class Path():
 
         self.path_list = []
         self.pell_list = []
+        self.gpath_list = []
 
         # the boundary is 4 pixels, path dia is 8
         bd = 4
@@ -467,6 +468,15 @@ class Path():
             temp.append((pair[0], pair[1] + 24))
         self.path_list = temp
 
+        for x in range(pr + 88, 136 - pr + 1):
+            temp = (x, 132 + pr)
+            self.gpath_list.append(temp)
+
+        c5_5 = WINDOW_W/2
+        for y in range(pr*4 + 84, 84 + pr*7):
+            temp = (c5_5, y)
+            self.gpath_list.append(temp)
+
     def draw_path(self):
         """
         debug: see if coordinates were correct
@@ -478,9 +488,12 @@ class Path():
         for coordinate in self.pell_list:
             pygame.draw.line(displaySurface, RED, coordinate, coordinate)
 
+        for coordinate in self.gpath_list:
+            pygame.draw.line(displaySurface, WHITE, coordinate, coordinate)
+
 pell_path = Path().pell_list
 path = Path().path_list
-
+gpath = Path().gpath_list
 class Pellet(pygame.sprite.Sprite):
     """
     The pellets that that puck man eats.
@@ -496,7 +509,7 @@ class Pellet(pygame.sprite.Sprite):
         if self.alive:
             self.score.add(200)
             self.alive = False
-            chompSnd.play()
+            chompSnd.play(0, 340, 0)
 
     def pell_maker(self):
         """
@@ -580,6 +593,79 @@ class Character(pygame.sprite.Sprite):
         elif self.pos == (WINDOW_W - 8, 140):
             self.pos = (8, 140)
         return valid
+
+class Ghost(Character):
+    """
+    Base class for characters, this is a child of the Sprite class defined in pygame, inheriting this allows us to use
+    the sprite interface which is basically all the methods a simple sprite needs.
+    """
+
+    def __init__(self, name, pos):
+        self.name = name
+        self.pos = pos
+        self.thresh = 4
+        self.dir = 'static'
+
+    def move(self, dir):
+        """
+        Moves the character, thresh allows for char not to be exactly on the correct pixel line to change direction.
+        Useful for the player (they don't have to align perfectly with a vertical line if they want to go in a vertical
+        direction.)
+        :param dir:
+        :return:
+        """
+        valid = False
+        if dir == UP:
+            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
+                if (x, self.pos[1]) in path and (x, self.pos[1] - 1) in path:
+                    self.pos = (x, self.pos[1] - 1)
+                    self.dir = dir
+                    valid = True
+
+        elif dir == DOWN:
+            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
+                if (x, self.pos[1]) in path and (x, self.pos[1] + 1) in path:
+                    self.pos = (x, self.pos[1] + 1)
+                    self.dir = dir
+                    valid = True
+
+        elif dir == LEFT:
+            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
+                if (self.pos[0], y) in path and (self.pos[0] - 1, y) in path:
+                    self.pos = (self.pos[0] - 1, y)
+                    self.dir = dir
+                    valid = True
+
+        elif dir == RIGHT:
+            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
+                if (self.pos[0], y) in path and (self.pos[0] + 1, y) in path:
+                    self.pos = (self.pos[0] + 1, y)
+                    self.dir = dir
+                    valid = True
+
+        if self.pos == (8, 140):
+            self.pos = (WINDOW_W - 8, 140)
+        elif self.pos == (WINDOW_W - 8, 140):
+            self.pos = (8, 140)
+        return valid
+
+class Blinky(Ghost):
+
+    def __init__(self):
+        self.name = "Blinky"
+        self.pos = (102, 148)
+        self.thresh = 4
+        self.dir = 'static'
+
+    def release(self):
+        """
+        release: gets ghost out of box after respond time.
+        :return:
+        """
+
+    def add(self):
+        pygame.draw.circle(displaySurface, RED, (self.pos[0] - 6, self.pos[1] - 6), 6)
+
 
 
 
@@ -707,6 +793,7 @@ class Game():
         self.score = Score()
 
         self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
+        self.blinky = Blinky()
 
         self.down_press = self.up_press =  self.left_press = self.right_press = False
         self.pellet = Pellet((0, 0), self.score)
@@ -776,9 +863,11 @@ class Game():
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
+
             self.score.render()
             self.pellet.pell_draw()
             self.puckMan.add()
+            self.blinky.add()
             pygame.display.update()
             FPSCLOCK.tick(FPS)
 
