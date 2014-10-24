@@ -7,7 +7,6 @@ from time import sleep
 import pygame, sys
 from pygame.locals import *
 
-
 WINDOW_H = 292
 WINDOW_W = 224
 
@@ -29,6 +28,7 @@ LEFT = 'left'
 RIGHT = 'right'
 NONE = 'none'
 pygame.mixer.init(44100, -16, 2, 2048)
+
 
 chompSnd = pygame.mixer.Sound('snd/chomp.wav')
 
@@ -60,7 +60,8 @@ class Path():
 
         self.path_list = []
         self.pell_list = []
-        self.gpath_list = []
+        self.gpath1_list = []
+        self.gpath2_list = []
 
         # the boundary is 4 pixels, path dia is 8
         bd = 4
@@ -468,14 +469,17 @@ class Path():
             temp.append((pair[0], pair[1] + 24))
         self.path_list = temp
 
+        count = 0
         for x in range(pr + 88, 136 - pr + 1):
-            temp = (x, 132 + pr)
-            self.gpath_list.append(temp)
+            count += 1
+            if count % 8 == 0:
+                temp = (x, 132 + pr)
+                self.gpath1_list.append(temp)
 
         c5_5 = WINDOW_W/2
         for y in range(pr*4 + 84, 84 + pr*7):
             temp = (c5_5, y)
-            self.gpath_list.append(temp)
+            self.gpath2_list.append(temp)
 
     def draw_path(self):
         """
@@ -488,12 +492,14 @@ class Path():
         for coordinate in self.pell_list:
             pygame.draw.line(displaySurface, RED, coordinate, coordinate)
 
-        for coordinate in self.gpath_list:
+        for coordinate in (self.gpath1_list + self.gpath2_list):
             pygame.draw.line(displaySurface, WHITE, coordinate, coordinate)
 
 pell_path = Path().pell_list
 path = Path().path_list
-gpath = Path().gpath_list
+gpath1 = Path().gpath1_list
+gpath2 = Path().gpath2_list
+
 class Pellet(pygame.sprite.Sprite):
     """
     The pellets that that puck man eats.
@@ -603,8 +609,53 @@ class Ghost(Character):
     def __init__(self, name, pos):
         self.name = name
         self.pos = pos
+        self.relpos = 0
         self.thresh = 4
         self.dir = 'static'
+        # release: if the ghost is still being released
+        # center:  if it has reached the center point of the start box
+        # vertic:  if the ghost is going vertical
+        # ai:      if the ai is taking control
+        #           [relea, cente, verti, ai]
+        self.flag = [False, False, False, False]
+
+    def release(self):
+        """
+        release: gets ghost out of box after respond time.
+        :return:
+        """
+        # 139 is the x coor that the ghost must reach to start moving vertically out of the box
+        dist = 139 - gpath1[self.relpos][1]
+
+
+        if not self.flag[0]:
+
+            if dist < 0:
+                self.dir = "LEFT"
+            else:
+                self.dir = "RIGHT"
+
+            self.flag[0] = True
+
+        elif self.flag[3]:
+            pass
+
+
+        else:
+            # if the ghost has reached the center but now has to have the direction changed
+            if self.flag[1] and not self.flag[2]:
+                self.flag[2] = True
+                self.dir = "UP"
+
+            # if the center flag is false but it is at the center
+            elif not self.flag[1] and self.pos == (WINDOW_W/2, 139):
+                self.flag[1] = True
+
+            # it is going vertically and has reached the point
+            elif self.flag[0] and self.flag[1] and self.pos == (WINDOW_W/2, 115):
+                self.flag[3] = True
+
+
 
     def move(self, dir):
         """
@@ -647,6 +698,7 @@ class Ghost(Character):
             self.pos = (WINDOW_W - 8, 140)
         elif self.pos == (WINDOW_W - 8, 140):
             self.pos = (8, 140)
+
         return valid
 
 class Blinky(Ghost):
@@ -655,19 +707,11 @@ class Blinky(Ghost):
         self.name = "Blinky"
         self.pos = (102, 148)
         self.thresh = 4
+        self.relpos = 0
         self.dir = 'static'
-
-    def release(self):
-        """
-        release: gets ghost out of box after respond time.
-        :return:
-        """
 
     def add(self):
         pygame.draw.circle(displaySurface, RED, (self.pos[0] - 6, self.pos[1] - 6), 6)
-
-
-
 
 class PuckMan(Character):
 
@@ -746,7 +790,6 @@ class PuckMan(Character):
         if self.dead:
 
             if self.ani_speed == 0:
-                print self.ani_pos
                 self.image = pygame.image.load(self.ani_death[self.ani_pos])
                 self.cnt -= 1
                 self.ani_pos += 1
