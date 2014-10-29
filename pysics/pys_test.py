@@ -1,14 +1,11 @@
 import sys
-
 import pygame
 from pygame.locals import *
-
-from pysics.pysics import *
-
+from pysics import *
 
 pygame.init()
 
-WINDOW_W = 640
+WINDOW_W = 480
 WINDOW_H = 480
 display = pygame.display.set_mode()
 
@@ -19,9 +16,16 @@ background = display.convert()
 background.fill(BLACK)
 display.blit(background, (0, 0))
 
-sim = Simulation(1, WINDOW_W, WINDOW_H, display)
-sim.add_Vec(200, 200)
-
+sim = Simulation(4, WINDOW_W, WINDOW_H, display)
+sim.add_Vec(220, 220)
+sim.add_Vec(50, 0)
+sim.add_Vec(0, 50)
+sim.add_Vec(30, 40)
+sim.add_Vec(40, 30)
+sim.add_Vec(50, 0)
+sim.add_Vec(0, 50)
+sim.add_Vec(40, 20)
+sim.add_Vec(20, 40)
 def main():
 
     while True:  # main game loop
@@ -30,7 +34,6 @@ def main():
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
-
         display.blit(background, (0, 0))
         sim.draw_vectors()
         pygame.display.update()

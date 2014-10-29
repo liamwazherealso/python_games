@@ -1,5 +1,7 @@
 # This is my attempt, at a 2d physics simulator for simple mechanics
 import pygame
+import math
+import sys
 
 class Vec:
     """
@@ -74,11 +76,21 @@ class Simulation:
         draw all the vectors given in the simulation, this draws a red line and a blue end to represent an arrow
         :return:
         """
-        for v in self.vectors:
 
+        for v in self.vectors:
+            if v.vec[0] != 0:
+                theta = math.atan(v.vec[1]/v.vec[0])
+            else:
+                theta = math.pi/2
+
+            sin = math.sin(theta)
+            cos = math.cos(theta)
             # draw main line
-            pygame.draw.line(self.surface, (255, 0, 0), (v.pos[0], v.pos[1]),
-                             (v.vec[0] - 4 * self.scale, v.vec[1] - 4 * self.scale))
-            # draw blue line to indicate direction
-            pygame.draw.line(self.surface, (0, 255, 0), (v.vec[0] - 4*self.scale, v.vec[1] - 4*self.scale),
-                             (v.vec[0], v.vec[1]))
+            pygame.draw.line(self.surface, (255, 0, 0), (v.pos[0], self.window_h - v.pos[1] - 1),
+                             (v.vec[0] - self.scale * cos, self.window_h - v.vec[1] + self.scale * sin - 1))
+            # draw green line to indicate direction
+            pygame.draw.line(self.surface, (0, 255, 0), (v.vec[0] - self.scale * cos, self.window_h - v.vec[1]
+                            - 1+self.scale * sin), (v.vec[0], self.window_h - v.vec[1]-1-self.scale*sin))
+
+            print "{:.7} {:7.2f} {:7.2f} {:7.2f}".format(v.vec, cos, sin, math.degrees(theta))
+        sys.exit(0)

@@ -639,8 +639,6 @@ class Ghost(Character):
 
         elif self.flag[3]:
             pass
-
-
         else:
             # if the ghost has reached the center but now has to have the direction changed
             if self.flag[1] and not self.flag[2]:
