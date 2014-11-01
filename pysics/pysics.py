@@ -94,3 +94,40 @@ class Simulation:
 
             print "{:.7} {:7.2f} {:7.2f} {:7.2f}".format(v.vec, cos, sin, math.degrees(theta))
         sys.exit(0)
+
+
+class Obj():
+    """
+    Though making every object have it's own class, it may be beneficial.
+    """
+
+    def __init__(self, pos, mass, rect, vel, acc):
+        """
+        mass: kg, I am not doing unit conversion so I am gonna stick with kg.
+        shape: pygame shape object. Size information is drawn from this.
+        vel: Initial velocity vector
+        acc: Initial acceleration vector, not adding jerk
+        """
+        self.mass = mass
+        self.rect = rect
+        self.vel = vel
+        self.acc = acc
+        self.pos = pos
+        self.cm = [self.rect.width/2,  self.rect.height/2]
+
+    def mov(self, time):
+        for i in range(1):
+            self.vel[i] = self.acc[i] * time
+            self.pos[i] = self.pos[i] + self.vel[i] * time + .5 * math.pow(self.acc[i], 2)
+
+    def col(self, o):
+        """
+        :param o: The other object in the collision.
+        """
+        vi1 = self.vel
+        vi2 = o.vel
+
+        for i in range(1):
+
+            self.vel[i] = (self.mass - o.mass)/(self.mass + o.mass) * vi1[i] + (2*o.mass)/(self.mass + o.mass) * vi2[i]
+            o.vel[i] = (2*o.mass)/(self.mass + o.mass) * vi2[i] - (self.mass - o.mass)/(self.mass + o.mass) * vi1[i]
