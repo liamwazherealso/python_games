@@ -540,67 +540,14 @@ class Small_Pellet(Pellet):
     def rect(self):
         return pygame.Rect((self.pos[0] - 1, self.pos[1] - 1, 2, 2))
 
+
 class Big_Pellet(Pellet):
 
     def draw(self):
         pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 2)
 
-class Character(pygame.sprite.Sprite):
-    """
-    Base class for characters, this is a child of the Sprite class defined in pygame, inheriting this allows us to use
-    the sprite interface which is basically all the methods a simple sprite needs.
-    """
 
-    def __init__(self, name, pos):
-        self.name = name
-        self.pos = pos
-        self.thresh = 4
-        self.dir = 'static'
-
-    def move(self, dir):
-        """
-        Moves the character, thresh allows for char not to be exactly on the correct pixel line to change direction.
-        Useful for the player (they don't have to align perfectly with a vertical line if they want to go in a vertical
-        direction.)
-        :param dir:
-        :return:
-        """
-        valid = False
-        if dir == UP:
-            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
-                if (x, self.pos[1]) in path and (x, self.pos[1] - 1) in path:
-                    self.pos = (x, self.pos[1] - 1)
-                    self.dir = dir
-                    valid = True
-
-        elif dir == DOWN:
-            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
-                if (x, self.pos[1]) in path and (x, self.pos[1] + 1) in path:
-                    self.pos = (x, self.pos[1] + 1)
-                    self.dir = dir
-                    valid = True
-
-        elif dir == LEFT:
-            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
-                if (self.pos[0], y) in path and (self.pos[0] - 1, y) in path:
-                    self.pos = (self.pos[0] - 1, y)
-                    self.dir = dir
-                    valid = True
-
-        elif dir == RIGHT:
-            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
-                if (self.pos[0], y) in path and (self.pos[0] + 1, y) in path:
-                    self.pos = (self.pos[0] + 1, y)
-                    self.dir = dir
-                    valid = True
-
-        if self.pos == (8, 140):
-            self.pos = (WINDOW_W - 8, 140)
-        elif self.pos == (WINDOW_W - 8, 140):
-            self.pos = (8, 140)
-        return valid
-
-class Ghost(Character):
+class Ghost(pygame.sprite.Sprite):
     """
     Base class for characters, this is a child of the Sprite class defined in pygame, inheriting this allows us to use
     the sprite interface which is basically all the methods a simple sprite needs.
@@ -707,11 +654,13 @@ class Blinky(Ghost):
         self.thresh = 4
         self.relpos = 0
         self.dir = 'static'
+        self.grid = [14, 26]
+        self.gridcouner = [4, 8]
 
     def add(self):
         pygame.draw.circle(displaySurface, RED, (self.pos[0] - 6, self.pos[1] - 6), 6)
 
-class PuckMan(Character):
+class PuckMan(pygame.sprite.Sprite):
 
     def __init__(self, name, pos):
         self.name = "Puck Man"
@@ -824,6 +773,67 @@ class PuckMan(Character):
 
         displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
 
+    def move(self, dir):
+        """
+        Moves the character, thresh allows for char not to be exactly on the correct pixel line to change direction.
+        Useful for the player (they don't have to align perfectly with a vertical line if they want to go in a vertical
+        direction.)
+        :param dir:
+        :return:
+        """
+        valid = False
+        if dir == UP:
+            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
+                if (x, self.pos[1]) in path and (x, self.pos[1] - 1) in path:
+                    self.pos = (x, self.pos[1] - 1)
+                    self.dir = dir
+                    valid = True
+
+                    self.gridcount[1] = (self.gridcount[1] + 1) % 9
+                    if self.gridcount[1] == 0:
+                        self.grid[1] += 1
+
+        elif dir == DOWN:
+            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
+                if (x, self.pos[1]) in path and (x, self.pos[1] + 1) in path:
+                    self.pos = (x, self.pos[1] + 1)
+                    self.dir = dir
+                    valid = True
+
+                    self.gridcount[1] = (self.gridcount[1] - 1) % 9
+                    if self.gridcount[1] == 0:
+                        self.grid[1] -= 1
+
+
+        elif dir == LEFT:
+            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
+                if (self.pos[0], y) in path and (self.pos[0] - 1, y) in path:
+                    self.pos = (self.pos[0] - 1, y)
+                    self.dir = dir
+                    valid = True
+
+                    self.gridcount[0] = (self.gridcount[0] - 1) % 9
+                    if self.gridcount[0] == 0:
+                        self.grid[0] -= 1
+
+
+        elif dir == RIGHT:
+            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
+                if (self.pos[0], y) in path and (self.pos[0] + 1, y) in path:
+                    self.pos = (self.pos[0] + 1, y)
+                    self.dir = dir
+                    valid = True
+
+                    self.gridcount[0] = (self.gridcount[0] + 1) % 9
+                    if self.gridcount[0] == 0:
+                        self.grid[0] += 1
+
+        if self.pos == (8, 140):
+            self.pos = (WINDOW_W - 8, 140)
+        elif self.pos == (WINDOW_W - 8, 140):
+            self.pos = (8, 140)
+        return valid
+
     def rect(self):
         return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
 
@@ -841,8 +851,6 @@ class Game():
         self.pellet.pell_maker()
         pygame.display.set_caption('Puck Man')
         self.background = pygame.image.load('puck_man_background.png')
-
-
 
     def main(self):
         while True:
