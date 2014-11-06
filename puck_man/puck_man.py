@@ -5,6 +5,7 @@
 import glob
 from time import sleep
 import pygame, sys
+import math
 from pygame.locals import *
 
 WINDOW_H = 292
@@ -27,6 +28,8 @@ DOWN = 'down'
 LEFT = 'left'
 RIGHT = 'right'
 NONE = 'none'
+
+directions = [UP, DOWN, LEFT, RIGHT]
 pygame.mixer.init(44100, -16, 2, 2048)
 
 
@@ -46,7 +49,7 @@ class Score():
     def render(self):
         msg = str(self.score)
         surfScore = self.font.render(msg, True, WHITE)
-        displaySurface.blit(self.mes, (WINDOW_W/2 - 25 , 0))
+        displaySurface.blit(self.mes, (WINDOW_W/2 - 25, 0))
         displaySurface.blit(surfScore, (WINDOW_W/2 - 10, 12))
 
 
@@ -265,7 +268,7 @@ class Path():
 
         # looks like this is where the dead pixel is coming from.
         count = 0
-        for y in range(204 + pr, WINDOW_H - pr - bd - 42 + 1):
+        for y in range(204 + pr, WINDOW_H - pr - bd - 44):
             temp = (c1x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -274,7 +277,7 @@ class Path():
 
         c2x = 36 - pr
         count = 0
-        for y in range(180 + pr, 220 - pr *2+ 1):
+        for y in range(180 + pr, 220 - pr):
             temp = (c2x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -283,7 +286,7 @@ class Path():
 
         c3x = 60 - pr
         count = 0
-        for y in range(bd + pr, 221 - pr + 1):
+        for y in range(bd + pr, 221 - pr):
             temp = (c3x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -308,7 +311,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(180 + pr, 220 - pr*2 + 1):
+        for y in range(180 + pr, 220 - pr + 1):
             temp = (c4x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -383,7 +386,7 @@ class Path():
 
         c7x = WINDOW_W - 84 + pr
         count = 0
-        for y in range(36 + pr, 77 - pr + 1):
+        for y in range(36 + pr, 77 - pr):
             temp = (c7x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -399,7 +402,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(180 + pr, 221 - pr + 1):
+        for y in range(180 + pr, 221 - pr):
             temp = (c7x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -426,7 +429,7 @@ class Path():
 
         c10x = WINDOW_W - 20 + pr
         count = 0
-        for y in range(bd + pr, 77 - pr + 1):
+        for y in range(bd + pr, 77 - pr):
             temp = (c10x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -434,7 +437,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(156 + pr, 197 - pr + 1):
+        for y in range(156 + pr, 197 - pr):
             temp = (c10x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -442,7 +445,7 @@ class Path():
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H -36 - pr*2 - bd + 1):
+        for y in range(204 + pr, WINDOW_H -36 - pr*2 - bd):
             temp = (c10x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -530,6 +533,7 @@ class Pellet(pygame.sprite.Sprite):
             if pellet.alive:
                 pellet.draw()
 
+
 class Small_Pellet(Pellet):
 
 
@@ -563,29 +567,32 @@ class Ghost(pygame.sprite.Sprite):
         # center:  if it has reached the center point of the start box
         # vertic:  if the ghost is going vertical
         # ai:      if the ai is taking control
-        #           [relea, cente, verti, ai]
-        self.flag = [False, False, False, False]
+        #           [relea, verti, ai]
+        self.flag = [False, False, False]
 
     def release(self):
         """
         release: gets ghost out of box after respond time.
         :return:
         """
-        # 139 is the x coor that the ghost must reach to start moving vertically out of the box
-        dist = 139 - gpath1[self.relpos][1]
 
-
-        if not self.flag[0]:
-
+        # it is still in the ghost house and it is not at the center
+        if not self.flag[0] and not self.flag[1]:
+            # 139 is the x coor that the ghost must reach to start moving vertically out of the box
+            dist = 139 - gpath1[self.relpos][1]
             if dist < 0:
                 self.dir = "LEFT"
             else:
                 self.dir = "RIGHT"
-
             self.flag[0] = True
 
-        elif self.flag[3]:
-            pass
+        # if the ghost is moving vertically
+        elif self.flag[2]:
+            # it has reached the top so ai is on and the other flags are off
+            if self.pos[1] == 140:
+                self.flag[0] = self.flag[1] = False
+                self.flag[3] = True
+
         else:
             # if the ghost has reached the center but now has to have the direction changed
             if self.flag[1] and not self.flag[2]:
@@ -600,8 +607,6 @@ class Ghost(pygame.sprite.Sprite):
             elif self.flag[0] and self.flag[1] and self.pos == (WINDOW_W/2, 115):
                 self.flag[3] = True
 
-
-
     def move(self, dir):
         """
         Moves the character, thresh allows for char not to be exactly on the correct pixel line to change direction.
@@ -610,7 +615,11 @@ class Ghost(pygame.sprite.Sprite):
         :param dir:
         :return:
         """
-        valid = False
+
+        # if the ai flag is not on that it still has to be released
+        if not self.flag[3]:
+            self.release()
+
         if dir == UP:
             for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
                 if (x, self.pos[1]) in path and (x, self.pos[1] - 1) in path:
@@ -651,11 +660,37 @@ class Blinky(Ghost):
     def __init__(self):
         self.name = "Blinky"
         self.pos = (102, 148)
-        self.thresh = 4
+        self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
         self.grid = [14, 26]
         self.gridcouner = [4, 8]
+
+    def ai(self, pmcoor):
+
+        valid = [False, False, False, False]
+        if (self.pos[0], self.pos[1] - 1) in path and self.dir != DOWN:
+            valid[0] = True
+
+        elif (self.pos[0], self.pos[1] + 1) in path and self.dir != UP:
+            valid[1] = True
+
+        elif (self.pos[0] - 1, self.pos[1]) in path and self.dir != LEFT:
+            valid[2] = True
+
+        elif (self.pos[0] + 1, self.pos[1]) in path and self.dir != RIGHT:
+            valid[3] = True
+
+        minimum = 0
+        for i in range(len(valid)):
+            if valid[i]:
+                hyp = math.sqrt(math.pow(abs(pmcoor[0] - self.grid[0]), 2) + math.pow(abs(pmcoor[1] - self.grid[1]), 2))
+                if hyp < minimum:
+                    minimum = i
+
+        self.dir = directions[minimum]
+
+
 
     def add(self):
         pygame.draw.circle(displaySurface, RED, (self.pos[0] - 6, self.pos[1] - 6), 6)
@@ -670,6 +705,8 @@ class PuckMan(pygame.sprite.Sprite):
         self.dir = 'static'
         self.dead = False
         self.lives = 2
+        self.gridcount = [8, 4]
+        self.grid = [14, 10]
 
         self.lives_img = pygame.image.load("img/pm_l1.png")
 
@@ -789,7 +826,7 @@ class PuckMan(pygame.sprite.Sprite):
                     self.dir = dir
                     valid = True
 
-                    self.gridcount[1] = (self.gridcount[1] + 1) % 9
+                    self.gridcount[1] = (self.gridcount[1] + 1) % 8
                     if self.gridcount[1] == 0:
                         self.grid[1] += 1
 
@@ -800,7 +837,7 @@ class PuckMan(pygame.sprite.Sprite):
                     self.dir = dir
                     valid = True
 
-                    self.gridcount[1] = (self.gridcount[1] - 1) % 9
+                    self.gridcount[1] = (self.gridcount[1] - 1) % 8
                     if self.gridcount[1] == 0:
                         self.grid[1] -= 1
 
@@ -812,7 +849,7 @@ class PuckMan(pygame.sprite.Sprite):
                     self.dir = dir
                     valid = True
 
-                    self.gridcount[0] = (self.gridcount[0] - 1) % 9
+                    self.gridcount[0] = (self.gridcount[0] - 1) % 8
                     if self.gridcount[0] == 0:
                         self.grid[0] -= 1
 
@@ -824,7 +861,7 @@ class PuckMan(pygame.sprite.Sprite):
                     self.dir = dir
                     valid = True
 
-                    self.gridcount[0] = (self.gridcount[0] + 1) % 9
+                    self.gridcount[0] = (self.gridcount[0] + 1) % 8
                     if self.gridcount[0] == 0:
                         self.grid[0] += 1
 
@@ -912,7 +949,8 @@ class Game():
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
-
+            Path().draw_path()
+            self.blinky.ai()
             self.score.render()
             self.pellet.pell_draw()
             self.puckMan.add()
