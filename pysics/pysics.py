@@ -3,6 +3,7 @@ import pygame
 import math
 import sys
 
+
 class Vec:
     """
     Class that defines a 2d vector and some useful functions with it.
@@ -52,6 +53,7 @@ class Vec:
         :return:
         """
         self.svec = [self.vec[0] * self.scalar, self.vec[1] * self.scalar]
+
 
 class Simulation:
     """

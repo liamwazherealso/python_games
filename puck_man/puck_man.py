@@ -2,6 +2,7 @@
 # but it actually comes from the Japanese phrase 'Paku-Paku,' which means to flap one's mouth open and closed. They
 # changed it because they thought Puck-Man would be too easy to vandalize, you know, like people could just scratch off
 # the P and turn it into an F or whatever. - Scott Pilgrim vs. The world
+
 import glob
 from time import sleep
 import pygame, sys
@@ -536,7 +537,6 @@ class Pellet(pygame.sprite.Sprite):
 
 class Small_Pellet(Pellet):
 
-
     def draw(self):
         if self.alive:
             pygame.draw.rect(displaySurface, PELLET_COLOR, (self.pos[0] - 1, self.pos[1] - 1, 2, 2))
@@ -562,13 +562,37 @@ class Ghost(pygame.sprite.Sprite):
         self.pos = pos
         self.relpos = 0
         self.thresh = 4
+        self.pos = [0, 0]
         self.dir = 'static'
+        self.gridcounter = [4, 8]
+        self.pre = " "
+        self.ani_speed = 0
+
         # release: if the ghost is still being released
         # center:  if it has reached the center point of the start box
         # vertic:  if the ghost is going vertical
         # ai:      if the ai is taking control
         #           [relea, verti, ai]
         self.flag = [False, False, False]
+
+        self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
+        self.ani_d.sort()
+
+        self.ani_u = glob.glob("img/" + self.pre + "_u*.png")
+        self.ani_u.sort()
+
+        self.ani_l = glob.glob("img/" + self.pre + "_l*.png")
+        self.ani_l.sort()
+
+        self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
+        self.ani_r.sort()
+
+        self.ani_pos = 0
+        self.ani_max = 1
+
+        self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        self.add()
+
 
     def release(self):
         """
@@ -577,37 +601,27 @@ class Ghost(pygame.sprite.Sprite):
         """
 
         # it is still in the ghost house and it is not at the center
-        if not self.flag[0] and not self.flag[1]:
-            # 139 is the x coor that the ghost must reach to start moving vertically out of the box
-            dist = 139 - gpath1[self.relpos][1]
+        if not self.flag[1] and not self.flag[0]:
+            # 112 is the x coor that the ghost must reach to start moving vertically out of the box
+            dist = 112 - self.pos[0]
             if dist < 0:
-                self.dir = "LEFT"
+                self.dir = LEFT
+
+            elif dist > 0:
+                self.dir = RIGHT
+
             else:
-                self.dir = "RIGHT"
-            self.flag[0] = True
-
-        # if the ghost is moving vertically
-        elif self.flag[2]:
-            # it has reached the top so ai is on and the other flags are off
-            if self.pos[1] == 140:
-                self.flag[0] = self.flag[1] = False
-                self.flag[3] = True
-
-        else:
-            # if the ghost has reached the center but now has to have the direction changed
-            if self.flag[1] and not self.flag[2]:
-                self.flag[2] = True
-                self.dir = "UP"
-
-            # if the center flag is false but it is at the center
-            elif not self.flag[1] and self.pos == (WINDOW_W/2, 139):
                 self.flag[1] = True
 
-            # it is going vertically and has reached the point
-            elif self.flag[0] and self.flag[1] and self.pos == (WINDOW_W/2, 115):
-                self.flag[3] = True
+        # the ghost is moving vertically
+        else:
+            self.dir = UP
+            if self.pos[1] == 116:
+                self.dir = NONE
+                # ai is on and will stop release from being called
+                self.flag[2] = True
 
-    def move(self, dir):
+    def move(self):
         """
         Moves the character, thresh allows for char not to be exactly on the correct pixel line to change direction.
         Useful for the player (they don't have to align perfectly with a vertical line if they want to go in a vertical
@@ -616,84 +630,141 @@ class Ghost(pygame.sprite.Sprite):
         :return:
         """
 
-        # if the ai flag is not on that it still has to be released
-        if not self.flag[3]:
-            self.release()
+        if self.dir == UP:
+                self.pos[1] -= 1
+                self.gridcounter[1] = (self.gridcounter[1] - 1) % 8
+                if self.gridcounter[1] == 0:
+                    self.grid[1] -= 1
 
-        if dir == UP:
-            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
-                if (x, self.pos[1]) in path and (x, self.pos[1] - 1) in path:
-                    self.pos = (x, self.pos[1] - 1)
-                    self.dir = dir
-                    valid = True
+        elif self.dir == DOWN:
+                self.pos[1] += 1
+                self.gridcounter[1] = (self.gridcounter[1] + 1) % 8
+                if self.gridcounter[1] == 0:
+                    self.grid[1] += 1
 
-        elif dir == DOWN:
-            for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
-                if (x, self.pos[1]) in path and (x, self.pos[1] + 1) in path:
-                    self.pos = (x, self.pos[1] + 1)
-                    self.dir = dir
-                    valid = True
+        elif self.dir == LEFT:
+                self.pos[0] -= 1
+                self.gridcounter[0] = (self.gridcounter[0] - 1) % 8
+                if self.gridcounter[0] == 0:
+                    self.grid[0] -= 1
 
-        elif dir == LEFT:
-            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
-                if (self.pos[0], y) in path and (self.pos[0] - 1, y) in path:
-                    self.pos = (self.pos[0] - 1, y)
-                    self.dir = dir
-                    valid = True
+        elif self.dir == RIGHT:
+                self.pos[0] += 1
+                self.gridcounter[0] = (self.gridcounter[0] + 1) % 8
+                if self.gridcounter[0] == 0:
+                    self.grid[0] += 1
 
-        elif dir == RIGHT:
-            for y in range(self.pos[1] - self.thresh, self.pos[1] + self.thresh):
-                if (self.pos[0], y) in path and (self.pos[0] + 1, y) in path:
-                    self.pos = (self.pos[0] + 1, y)
-                    self.dir = dir
-                    valid = True
-
-        if self.pos == (8, 140):
-            self.pos = (WINDOW_W - 8, 140)
-        elif self.pos == (WINDOW_W - 8, 140):
-            self.pos = (8, 140)
-
-        return valid
 
 class Blinky(Ghost):
 
     def __init__(self):
         self.name = "Blinky"
-        self.pos = (102, 148)
+        self.pos = [102, 142]
+        self.flag = [False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
-        self.grid = [14, 26]
-        self.gridcouner = [4, 8]
+        self.grid = [14, 18]
+        self.gridcounter = [8, 4]
+        self.dead = False
+        self.pre = "bl"
+        self.ani_speed = 0
+        self.surf = pygame.Surface([12, 13])
+
+        self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
+        self.ani_d.sort()
+
+        self.ani_u = glob.glob("img/" + self.pre + "_u*.png")
+        self.ani_u.sort()
+
+        self.ani_l = glob.glob("img/" + self.pre + "_l*.png")
+        self.ani_l.sort()
+
+        self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
+        self.ani_r.sort()
+
+        self.ani_pos = 0
+        self.ani_max = 1
+
+        self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        self.add()
 
     def ai(self, pmcoor):
 
-        valid = [False, False, False, False]
-        if (self.pos[0], self.pos[1] - 1) in path and self.dir != DOWN:
-            valid[0] = True
+        index = 3
+        minimum = 40
+        hyp = 0
 
-        elif (self.pos[0], self.pos[1] + 1) in path and self.dir != UP:
-            valid[1] = True
+        # if the ai is on
+        if self.flag[2]:
+            # Which directions are valid
+            valid = [False, False, False, False]
+            # direction must be on path and not the reverse of current direction
+            if (self.pos[0], self.pos[1] - 1) in path and self.dir != DOWN:
+                valid[0] = True
 
-        elif (self.pos[0] - 1, self.pos[1]) in path and self.dir != LEFT:
-            valid[2] = True
+            if (self.pos[0], self.pos[1] + 1) in path and self.dir != UP:
+                valid[1] = True
 
-        elif (self.pos[0] + 1, self.pos[1]) in path and self.dir != RIGHT:
-            valid[3] = True
+            if (self.pos[0] - 1, self.pos[1]) in path and self.dir != RIGHT:
+                valid[2] = True
 
-        minimum = 0
-        for i in range(len(valid)):
-            if valid[i]:
-                hyp = math.sqrt(math.pow(abs(pmcoor[0] - self.grid[0]), 2) + math.pow(abs(pmcoor[1] - self.grid[1]), 2))
-                if hyp < minimum:
-                    minimum = i
+            if (self.pos[0] + 1, self.pos[1]) in path and self.dir != LEFT:
+                valid[3] = True
 
-        self.dir = directions[minimum]
+            print pmcoor, self.grid
+            for i in range(len(valid)):
+                if valid[i]:
+                    if directions[i] == DOWN:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]-1, 2))
+                        print directions[i], hyp
 
+                    elif directions[i] == UP:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]+1, 2))
+                        print directions[i], hyp
 
+                    elif directions[i] == RIGHT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] - 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+                        print directions[i], hyp
+
+                    elif directions[i] == LEFT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] + 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+                        print directions[i], hyp
+
+                    if hyp < minimum:
+                        minimum = hyp
+                        index = i
+
+            self.dir = directions[index]
+        else:
+            self.release()
 
     def add(self):
-        pygame.draw.circle(displaySurface, RED, (self.pos[0] - 6, self.pos[1] - 6), 6)
+        self.move()
+
+        if self.dir == LEFT and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        elif self.dir == RIGHT and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_r[self.ani_pos])
+        elif self.dir == UP and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_u[self.ani_pos])
+        elif self.dir == DOWN and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_d[self.ani_pos])
+
+        self.ani_pos = (self.ani_pos + 1) % 2
+        self.ani_speed = (self.ani_speed + 1) % 10
+
+        self.surf.blit(self.image, (0, 0))
+        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6 ))
+
 
 class PuckMan(pygame.sprite.Sprite):
 
@@ -706,7 +777,7 @@ class PuckMan(pygame.sprite.Sprite):
         self.dead = False
         self.lives = 2
         self.gridcount = [8, 4]
-        self.grid = [14, 10]
+        self.grid = [14, 26]
 
         self.lives_img = pygame.image.load("img/pm_l1.png")
 
@@ -739,8 +810,6 @@ class PuckMan(pygame.sprite.Sprite):
 
         self.ani_death = glob.glob("img/pd_die*.png")
         self.ani_death.sort()
-        self.ani_death
-
         self.ani_pos = 0
         self.ani_max = len(self.ani_l)-1
 
@@ -826,9 +895,9 @@ class PuckMan(pygame.sprite.Sprite):
                     self.dir = dir
                     valid = True
 
-                    self.gridcount[1] = (self.gridcount[1] + 1) % 8
+                    self.gridcount[1] = (self.gridcount[1] - 1) % 8
                     if self.gridcount[1] == 0:
-                        self.grid[1] += 1
+                        self.grid[1] -= 1
 
         elif dir == DOWN:
             for x in range(self.pos[0] - self.thresh, self.pos[0] + self.thresh):
@@ -837,9 +906,9 @@ class PuckMan(pygame.sprite.Sprite):
                     self.dir = dir
                     valid = True
 
-                    self.gridcount[1] = (self.gridcount[1] - 1) % 8
+                    self.gridcount[1] = (self.gridcount[1] + 1) % 8
                     if self.gridcount[1] == 0:
-                        self.grid[1] -= 1
+                        self.grid[1] += 1
 
 
         elif dir == LEFT:
@@ -873,6 +942,7 @@ class PuckMan(pygame.sprite.Sprite):
 
     def rect(self):
         return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
+
 
 class Game():
 
@@ -949,8 +1019,8 @@ class Game():
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
-            Path().draw_path()
-            self.blinky.ai()
+            #Path().draw_path()
+            self.blinky.ai(self.puckMan.grid)
             self.score.render()
             self.pellet.pell_draw()
             self.puckMan.add()

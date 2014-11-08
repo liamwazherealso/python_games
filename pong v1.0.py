@@ -49,7 +49,7 @@ class Player():
         :param side: Which side the player is on.
         """
 
-        self.player = player_sur.convert()
+        self.player = player_sur
         self.player.fill((255, 0, 0))
         self.speed = 10  # determines how fast the player(s) move
         self.side = side
