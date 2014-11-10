@@ -712,28 +712,23 @@ class Blinky(Ghost):
             if (self.pos[0] + 1, self.pos[1]) in path and self.dir != LEFT:
                 valid[3] = True
 
-            print pmcoor, self.grid
             for i in range(len(valid)):
                 if valid[i]:
                     if directions[i] == DOWN:
                         hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
                                                                                               - self.grid[1]-1, 2))
-                        print directions[i], hyp
 
                     elif directions[i] == UP:
                         hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
                                                                                               - self.grid[1]+1, 2))
-                        print directions[i], hyp
 
                     elif directions[i] == RIGHT:
                         hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] - 1, 2) + math.pow(pmcoor[1]
                                                                                               - self.grid[1], 2))
-                        print directions[i], hyp
 
                     elif directions[i] == LEFT:
                         hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] + 1, 2) + math.pow(pmcoor[1]
                                                                                               - self.grid[1], 2))
-                        print directions[i], hyp
 
                     if hyp < minimum:
                         minimum = hyp
@@ -765,6 +760,8 @@ class Blinky(Ghost):
         self.surf.blit(self.image, (0, 0))
         displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6 ))
 
+    def rect(self):
+        return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
 
 class PuckMan(pygame.sprite.Sprite):
 
@@ -778,6 +775,7 @@ class PuckMan(pygame.sprite.Sprite):
         self.lives = 2
         self.gridcount = [8, 4]
         self.grid = [14, 26]
+        self.reset = False
 
         self.lives_img = pygame.image.load("img/pm_l1.png")
 
@@ -822,8 +820,9 @@ class PuckMan(pygame.sprite.Sprite):
         self.ani_pos = 0
         self.ani_speed = 0
         self.cnt = 8
-        self.c = False
-        self.dir = "hoopla"
+        self.ani_death_done = False
+        self.dir = NONE
+
 
 
     def add(self):
@@ -848,7 +847,8 @@ class PuckMan(pygame.sprite.Sprite):
                 self.ani_pos += 1
 
             if self.cnt == 0:
-                self.c = True
+                self.ani_death_done = True
+                self.reset = True
 
         self.surf.fill((0, 0, 0))
         self.surf.blit(self.image, (0, 0))
@@ -857,7 +857,7 @@ class PuckMan(pygame.sprite.Sprite):
         if self.ani_pos == self.ani_max and not self.dead:
             self.ani_pos = 0
 
-        elif self.dead and self.c:
+        elif self.dead and self.ani_death_done:
             sleep(3)
             self.dead = False
             self.ani_pos = 0
@@ -1020,13 +1020,42 @@ class Game():
 
             displaySurface.blit(self.background, (0, 0))
             #Path().draw_path()
-            self.blinky.ai(self.puckMan.grid)
+            if not self.puckMan.dead:
+                self.blinky.ai(self.puckMan.grid)
+            else:
+                self.blinky.dir = NONE
+
             self.score.render()
             self.pellet.pell_draw()
             self.puckMan.add()
             self.blinky.add()
+
+            if self.puckMan.rect().colliderect(self.blinky.rect()) and not self.puckMan.dead:
+                self.counter = self.puckMan.lives
+                self.puckMan.die()
+
+            if self.puckMan.reset:
+                self.reset_death()
+
             pygame.display.update()
             FPSCLOCK.tick(FPS)
+
+    def reset_death(self):
+        print(self.counter)
+        self.puckMan.name = "Puck Man"
+        self.puckMan.pos = (WINDOW_W / 2, 188 + 24)
+        self.puckMan.thresh = 4
+        self.puckMan.dir = 'static'
+        self.puckMan.dead = False
+        self.puckMan.gridcount = [8, 4]
+        self.puckMan.grid = [14, 26]
+        self.puckMan.reset = False
+        self.puckMan.lives = self.counter - 1
+        self.puckMan.image = pygame.image.load(self.puckMan.ani_l[self.puckMan.ani_pos])
+        self.blinky = Blinky()
+
+        self.down_press = self.up_press =  self.left_press = self.right_press = False
+
 
 
 if __name__ == '__main__':
