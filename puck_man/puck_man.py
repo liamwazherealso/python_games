@@ -714,21 +714,20 @@ class Blinky(Ghost):
 
             for i in range(len(valid)):
                 if valid[i]:
-                    if directions[i] == DOWN:
-                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
-                                                                                              - self.grid[1]-1, 2))
-
-                    elif directions[i] == UP:
-                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
-                                                                                              - self.grid[1]+1, 2))
-
-                    elif directions[i] == RIGHT:
+                    if directions[i] == RIGHT:
                         hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] - 1, 2) + math.pow(pmcoor[1]
                                                                                               - self.grid[1], 2))
+                    elif directions[i] == DOWN:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]-1, 2))
 
                     elif directions[i] == LEFT:
                         hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] + 1, 2) + math.pow(pmcoor[1]
                                                                                               - self.grid[1], 2))
+
+                    elif directions[i] == UP:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]+1, 2))
 
                     if hyp < minimum:
                         minimum = hyp
@@ -936,8 +935,14 @@ class PuckMan(pygame.sprite.Sprite):
 
         if self.pos == (8, 140):
             self.pos = (WINDOW_W - 8, 140)
+            self.grid = [28, 18]
+            self.gridcount = [4, 4]
+
         elif self.pos == (WINDOW_W - 8, 140):
             self.pos = (8, 140)
+            self.grid = [1, 18]
+            self.gridcount = [4, 4]
+
         return valid
 
     def rect(self):
@@ -949,7 +954,7 @@ class Game():
     def __init__(self):
         pygame.init()
         self.score = Score()
-
+        self.pell_count = 0
         self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
         self.blinky = Blinky()
 
@@ -1012,9 +1017,11 @@ class Game():
             if not move:
                 self.puckMan.move(self.puckMan.dir)
 
+            #TODO replace with sprite group
             for pellet in pel_group:
                 if pellet.rect().colliderect(self.puckMan.rect()):
                     pellet.kill()
+                    self.pell_count += 1
 
             # add surfaces then render directly after
 
