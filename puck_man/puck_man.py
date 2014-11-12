@@ -64,8 +64,7 @@ class Path():
 
         self.path_list = []
         self.pell_list = []
-        self.gpath1_list = []
-        self.gpath2_list = []
+        self.gpath_list = []
 
         # the boundary is 4 pixels, path dia is 8
         bd = 4
@@ -143,6 +142,7 @@ class Path():
         count = 4
         for x in range(pr, 84 - pr + 1):
             temp = (x, r5y)
+            print 1
             self.path_list.append(temp)
             if count % 8 == 0:
                 self.pell_list.append(temp)
@@ -473,36 +473,25 @@ class Path():
             temp.append((pair[0], pair[1] + 24))
         self.path_list = temp
 
-        count = 0
-        for x in range(pr + 88, 136 - pr + 1):
-            count += 1
-            if count % 8 == 0:
-                temp = (x, 132 + pr)
-                self.gpath1_list.append(temp)
+        # ghost path
+        self.gpath_list = self.path_list
 
-        c5_5 = WINDOW_W/2
-        for y in range(pr*4 + 84, 84 + pr*7):
-            temp = (c5_5, y)
-            self.gpath2_list.append(temp)
+
 
     def draw_path(self):
         """
         debug: see if coordinates were correct
         :return:
         """
-        for coordinate in self.path_list:
+        for coordinate in self.gpath_list:
             pygame.draw.line(displaySurface, GREEN, coordinate, coordinate)
 
-        for coordinate in self.pell_list:
-            pygame.draw.line(displaySurface, RED, coordinate, coordinate)
-
-        for coordinate in (self.gpath1_list + self.gpath2_list):
-            pygame.draw.line(displaySurface, WHITE, coordinate, coordinate)
+        #for coordinate in self.pell_list:
+        #    pygame.draw.line(displaySurface, RED, coordinate, coordinate)
 
 pell_path = Path().pell_list
 path = Path().path_list
-gpath1 = Path().gpath1_list
-gpath2 = Path().gpath2_list
+gpath = Path().gpath_list
 
 class Pellet(pygame.sprite.Sprite):
     """
@@ -700,16 +689,16 @@ class Blinky(Ghost):
             # Which directions are valid
             valid = [False, False, False, False]
             # direction must be on path and not the reverse of current direction
-            if (self.pos[0], self.pos[1] - 1) in path and self.dir != DOWN:
+            if (self.pos[0], self.pos[1] - 1) in gpath and self.dir != DOWN:
                 valid[0] = True
 
-            if (self.pos[0], self.pos[1] + 1) in path and self.dir != UP:
+            if (self.pos[0], self.pos[1] + 1) in gpath and self.dir != UP:
                 valid[1] = True
 
-            if (self.pos[0] - 1, self.pos[1]) in path and self.dir != RIGHT:
+            if (self.pos[0] - 1, self.pos[1]) in gpath and self.dir != RIGHT:
                 valid[2] = True
 
-            if (self.pos[0] + 1, self.pos[1]) in path and self.dir != LEFT:
+            if (self.pos[0] + 1, self.pos[1]) in gpath and self.dir != LEFT:
                 valid[3] = True
 
             for i in range(len(valid)):
@@ -757,10 +746,11 @@ class Blinky(Ghost):
         self.ani_speed = (self.ani_speed + 1) % 10
 
         self.surf.blit(self.image, (0, 0))
-        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6 ))
+        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
 
     def rect(self):
         return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
+
 
 class PuckMan(pygame.sprite.Sprite):
 
@@ -814,14 +804,14 @@ class PuckMan(pygame.sprite.Sprite):
         self.add()
 
     def die(self):
-        self.lives -= 1
-        self.dead = True
-        self.ani_pos = 0
-        self.ani_speed = 0
-        self.cnt = 8
-        self.ani_death_done = False
-        self.dir = NONE
-
+        if not self.dead:
+            self.lives -= 1
+            self.dead = True
+            self.ani_pos = 0
+            self.ani_speed = 0
+            self.cnt = 8
+            self.ani_death_done = False
+            self.dir = NONE
 
 
     def add(self):
@@ -969,53 +959,53 @@ class Game():
             #Set value for key true if pushed down, false if up
 
             for event in pygame.event.get():
-                if not self.puckMan.dead:
-                    if event.type == KEYDOWN:
-                        if event.key == K_UP:
-                            self.up_press = True
+                if event.type == KEYDOWN:
+                    if event.key == K_UP:
+                        self.up_press = True
 
-                        elif event.key == K_DOWN:
-                            self.down_press = True
+                    elif event.key == K_DOWN:
+                        self.down_press = True
 
-                        elif event.key == K_LEFT:
-                            self.left_press = True
+                    elif event.key == K_LEFT:
+                        self.left_press = True
 
-                        elif event.key == K_RIGHT:
-                            self.right_press = True
+                    elif event.key == K_RIGHT:
+                        self.right_press = True
 
-                        elif event.key == K_d:
-                            self.puckMan.die()
+                    elif event.key == K_d:
+                        self.puckMan.die()
 
-                    elif event.type == KEYUP:
-                        if event.key == K_UP:
-                            self.up_press = False
+                elif event.type == KEYUP:
+                    if event.key == K_UP:
+                        self.up_press = False
 
-                        elif event.key == K_DOWN:
-                            self.down_press = False
+                    elif event.key == K_DOWN:
+                        self.down_press = False
 
-                        elif event.key == K_LEFT:
-                            self.left_press = False
+                    elif event.key == K_LEFT:
+                        self.left_press = False
 
-                        elif event.key == K_RIGHT:
-                            self.right_press = False
+                    elif event.key == K_RIGHT:
+                        self.right_press = False
 
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
 
-            # move holds whether or not the movement worked
-            move = False
-            if self.up_press:
-                move = self.puckMan.move(UP)
-            elif self.down_press:
-                move = self.puckMan.move(DOWN)
-            elif self.left_press:
-                move = self.puckMan.move(LEFT)
-            elif self.right_press:
-                move = self.puckMan.move(RIGHT)
-            # no move worked, so we move in the direction it was before
-            if not move:
-                self.puckMan.move(self.puckMan.dir)
+            if not self.puckMan.dead:
+                # move holds whether or not the movement worked
+                move = False
+                if self.up_press:
+                    move = self.puckMan.move(UP)
+                elif self.down_press:
+                    move = self.puckMan.move(DOWN)
+                elif self.left_press:
+                    move = self.puckMan.move(LEFT)
+                elif self.right_press:
+                    move = self.puckMan.move(RIGHT)
+                # no move worked, so we move in the direction it was before
+                if not move:
+                    self.puckMan.move(self.puckMan.dir)
 
             #TODO replace with sprite group
             for pellet in pel_group:
@@ -1026,7 +1016,7 @@ class Game():
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
-            #Path().draw_path()
+            Path().draw_path()
             if not self.puckMan.dead:
                 self.blinky.ai(self.puckMan.grid)
             else:
@@ -1037,7 +1027,8 @@ class Game():
             self.puckMan.add()
             self.blinky.add()
 
-            if self.puckMan.rect().colliderect(self.blinky.rect()) and not self.puckMan.dead:
+            if self.puckMan.rect().colliderect(self.blinky.rect()):
+                self.puckMan.dir = NONE
                 self.counter = self.puckMan.lives
                 self.puckMan.die()
 
@@ -1048,7 +1039,6 @@ class Game():
             FPSCLOCK.tick(FPS)
 
     def reset_death(self):
-        print(self.counter)
         self.puckMan.name = "Puck Man"
         self.puckMan.pos = (WINDOW_W / 2, 188 + 24)
         self.puckMan.thresh = 4
