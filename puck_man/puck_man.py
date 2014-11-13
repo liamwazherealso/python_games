@@ -469,7 +469,7 @@ class Path():
 
         # removes the parts of r5 that the ghost cannot go in.
         self.g = self.path_list
-        self.gpath_list = self.path_list
+        self.gpath_list = list(self.path_list)
 
         for x in range(pr, 84 - pr*4 + 1):
             temp = (x, r5y)
@@ -1028,7 +1028,7 @@ class Game():
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
-            Path().draw_path()
+            #Path().draw_path()
             if not self.puckMan.dead:
                 self.blinky.ai(self.puckMan.grid)
             else:
