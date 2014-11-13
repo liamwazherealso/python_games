@@ -519,7 +519,7 @@ class Pellet(pygame.sprite.Sprite):
 
     def kill(self):
         if self.alive:
-            self.score.add(200)
+            self.score.add(10)
             self.alive = False
             chompSnd.play(0, 340, 0)
 
@@ -603,7 +603,7 @@ class Ghost(pygame.sprite.Sprite):
         """
 
         # it is still in the ghost house and it is not at the center
-        if not self.flag[1] and not self.flag[0]:
+        if not self.flag[1] and self.flag[0]:
             # 112 is the x coor that the ghost must reach to start moving vertically out of the box
             dist = 112 - self.pos[0]
             if dist < 0:
@@ -656,18 +656,43 @@ class Ghost(pygame.sprite.Sprite):
                 if self.gridcounter[0] == 0:
                     self.grid[0] += 1
 
+    def add(self):
+        self.move()
+
+        if self.dir == LEFT and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        elif self.dir == RIGHT and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_r[self.ani_pos])
+        elif self.dir == UP and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_u[self.ani_pos])
+        elif self.dir == DOWN and not self.dead:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_d[self.ani_pos])
+
+        self.ani_pos = (self.ani_pos + 1) % 2
+        self.ani_speed = (self.ani_speed + 1) % 10
+
+        self.surf.blit(self.image, (0, 0))
+        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
+
+    def rect(self):
+        return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
+
 
 class Blinky(Ghost):
 
     def __init__(self):
         self.name = "Blinky"
-        self.pos = [102, 142]
+        self.pos = [100, 142]
         self.flag = [False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
         self.grid = [14, 18]
-        self.gridcounter = [8, 4]
+        self.gridcounter =[6, 4]
         self.dead = False
         self.pre = "bl"
         self.ani_speed = 0
@@ -736,33 +761,254 @@ class Blinky(Ghost):
                         index = i
 
             self.dir = directions[index]
-        else:
+        elif self.flag[0]:
             self.release()
 
-    def add(self):
-        self.move()
+class Inky(Ghost):
 
-        if self.dir == LEFT and not self.dead:
-            if self.ani_speed == 0:
-                self.image = pygame.image.load(self.ani_l[self.ani_pos])
-        elif self.dir == RIGHT and not self.dead:
-            if self.ani_speed == 0:
-                self.image = pygame.image.load(self.ani_r[self.ani_pos])
-        elif self.dir == UP and not self.dead:
-            if self.ani_speed == 0:
-                self.image = pygame.image.load(self.ani_u[self.ani_pos])
-        elif self.dir == DOWN and not self.dead:
-            if self.ani_speed == 0:
-                self.image = pygame.image.load(self.ani_d[self.ani_pos])
+    def __init__(self):
+        self.name = "Inky"
+        self.pos = [124, 142]
+        self.flag = [False, False, False]
+        self.thresh = 0
+        self.relpos = 0
+        self.dir = 'static'
+        self.grid = [16, 18]
+        self.gridcounter = [4, 4]
+        self.dead = False
+        self.pre = "in"
+        self.ani_speed = 0
+        self.surf = pygame.Surface([12, 13])
 
-        self.ani_pos = (self.ani_pos + 1) % 2
-        self.ani_speed = (self.ani_speed + 1) % 10
+        self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
+        self.ani_d.sort()
 
-        self.surf.blit(self.image, (0, 0))
-        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
+        self.ani_u = glob.glob("img/" + self.pre + "_u*.png")
+        self.ani_u.sort()
 
-    def rect(self):
-        return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
+        self.ani_l = glob.glob("img/" + self.pre + "_l*.png")
+        self.ani_l.sort()
+
+        self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
+        self.ani_r.sort()
+
+        self.ani_pos = 0
+        self.ani_max = 1
+
+        self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        self.add()
+
+    def ai(self, pmcoor):
+
+        index = 3
+        minimum = 40
+        hyp = 0
+
+        # if the ai is on
+        if self.flag[2]:
+            # Which directions are valid
+            valid = [False, False, False, False]
+            # direction must be on path and not the reverse of current direction
+            if (self.pos[0], self.pos[1] - 1) in gpath and self.dir != DOWN:
+                valid[0] = True
+
+            if (self.pos[0], self.pos[1] + 1) in gpath and self.dir != UP:
+                valid[1] = True
+
+            if (self.pos[0] - 1, self.pos[1]) in gpath and self.dir != RIGHT:
+                valid[2] = True
+
+            if (self.pos[0] + 1, self.pos[1]) in gpath and self.dir != LEFT:
+                valid[3] = True
+
+            for i in range(len(valid)):
+                if valid[i]:
+                    if directions[i] == RIGHT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] - 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+                    elif directions[i] == DOWN:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]-1, 2))
+
+                    elif directions[i] == LEFT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] + 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+
+                    elif directions[i] == UP:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]+1, 2))
+
+                    if hyp < minimum:
+                        minimum = hyp
+                        index = i
+
+            self.dir = directions[index]
+        elif self.flag[0]:
+            self.release()
+
+class Pinky(Ghost):
+
+    def __init__(self):
+        self.name = "Pinky"
+        self.pos = [130, 142]
+        self.flag = [False, False, False]
+        self.thresh = 0
+        self.relpos = 0
+        self.dir = 'static'
+        self.grid = [16, 18]
+        self.gridcounter = [4, 4]
+        self.dead = False
+        self.pre = "Pi"
+        self.ani_speed = 0
+        self.surf = pygame.Surface([12, 13])
+
+        self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
+        self.ani_d.sort()
+
+        self.ani_u = glob.glob("img/" + self.pre + "_u*.png")
+        self.ani_u.sort()
+
+        self.ani_l = glob.glob("img/" + self.pre + "_l*.png")
+        self.ani_l.sort()
+
+        self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
+        self.ani_r.sort()
+
+        self.ani_pos = 0
+        self.ani_max = 1
+
+        self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        self.add()
+
+    def ai(self, pmcoor):
+
+        index = 3
+        minimum = 40
+        hyp = 0
+
+        # if the ai is on
+        if self.flag[2]:
+            # Which directions are valid
+            valid = [False, False, False, False]
+            # direction must be on path and not the reverse of current direction
+            if (self.pos[0], self.pos[1] - 1) in gpath and self.dir != DOWN:
+                valid[0] = True
+
+            if (self.pos[0], self.pos[1] + 1) in gpath and self.dir != UP:
+                valid[1] = True
+
+            if (self.pos[0] - 1, self.pos[1]) in gpath and self.dir != RIGHT:
+                valid[2] = True
+
+            if (self.pos[0] + 1, self.pos[1]) in gpath and self.dir != LEFT:
+                valid[3] = True
+
+            for i in range(len(valid)):
+                if valid[i]:
+                    if directions[i] == RIGHT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] - 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+                    elif directions[i] == DOWN:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]-1, 2))
+
+                    elif directions[i] == LEFT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] + 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+
+                    elif directions[i] == UP:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]+1, 2))
+
+                    if hyp < minimum:
+                        minimum = hyp
+                        index = i
+
+            self.dir = directions[index]
+        elif self.flag[0]:
+            self.release()
+
+class Clyde(Ghost):
+
+    def __init__(self):
+        self.name = "Clyde"
+        self.pos = [112, 142]
+        self.flag = [False, False, False]
+        self.thresh = 0
+        self.relpos = 0
+        self.dir = 'static'
+        self.grid = [15, 18]
+        self.gridcounter = [4, 4]
+        self.dead = False
+        self.pre = "cl"
+        self.ani_speed = 0
+        self.surf = pygame.Surface([12, 13])
+
+        self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
+        self.ani_d.sort()
+
+        self.ani_u = glob.glob("img/" + self.pre + "_u*.png")
+        self.ani_u.sort()
+
+        self.ani_l = glob.glob("img/" + self.pre + "_l*.png")
+        self.ani_l.sort()
+
+        self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
+        self.ani_r.sort()
+
+        self.ani_pos = 0
+        self.ani_max = 1
+
+        self.image = pygame.image.load(self.ani_l[self.ani_pos])
+        self.add()
+
+    def ai(self, pmcoor):
+
+        index = 3
+        minimum = 40
+        hyp = 0
+
+        # if the ai is on
+        if self.flag[2]:
+            # Which directions are valid
+            valid = [False, False, False, False]
+            # direction must be on path and not the reverse of current direction
+            if (self.pos[0], self.pos[1] - 1) in gpath and self.dir != DOWN:
+                valid[0] = True
+
+            if (self.pos[0], self.pos[1] + 1) in gpath and self.dir != UP:
+                valid[1] = True
+
+            if (self.pos[0] - 1, self.pos[1]) in gpath and self.dir != RIGHT:
+                valid[2] = True
+
+            if (self.pos[0] + 1, self.pos[1]) in gpath and self.dir != LEFT:
+                valid[3] = True
+
+            for i in range(len(valid)):
+                if valid[i]:
+                    if directions[i] == RIGHT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] - 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+                    elif directions[i] == DOWN:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]-1, 2))
+
+                    elif directions[i] == LEFT:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] + 1, 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1], 2))
+
+                    elif directions[i] == UP:
+                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                                                                                              - self.grid[1]+1, 2))
+
+                    if hyp < minimum:
+                        minimum = hyp
+                        index = i
+
+            self.dir = directions[index]
+        elif self.flag[0]:
+            self.release()
 
 
 class PuckMan(pygame.sprite.Sprite):
@@ -959,8 +1205,17 @@ class Game():
         self.pell_count = 0
         self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
         self.blinky = Blinky()
+        self.clyde = Clyde()
+        self.inky = Inky()
+        self.pinky = Pinky()
+        self.time_keeper = 0
+        # how many pellets pm has to eat till the ghosts come out
+        self.blinky_counter = 6
+        self.clyde_counter = 15
+        self.pinky_counter = 15
+        self.inky_counter = 15
 
-        self.down_press = self.up_press =  self.left_press = self.right_press = False
+        self.down_press = self.up_press = self.left_press = self.right_press = False
         self.pellet = Pellet((0, 0), self.score)
         self.pellet.pell_maker()
         pygame.display.set_caption('Puck Man')
@@ -1019,9 +1274,21 @@ class Game():
                 if not move:
                     self.puckMan.move(self.puckMan.dir)
 
+            if self.pell_count == self.blinky_counter:
+                self.blinky.flag[0] = True
+
+            if self.pell_count == self.clyde_counter:
+                self.clyde.flag[0] = True
+
+            if self.pell_count == self.inky_counter:
+                self.inky.flag[0] = True
+
+            if self.pell_count == self.pinky_counter:
+                self.pinky.flag[0] = True
+
             #TODO replace with sprite group
             for pellet in pel_group:
-                if pellet.rect().colliderect(self.puckMan.rect()):
+                if pellet.rect().colliderect(self.puckMan.rect()) and pellet.alive:
                     pellet.kill()
                     self.pell_count += 1
 
@@ -1029,17 +1296,30 @@ class Game():
 
             displaySurface.blit(self.background, (0, 0))
             #Path().draw_path()
+
+            # The ghost stop acting if the packman is ded
             if not self.puckMan.dead:
                 self.blinky.ai(self.puckMan.grid)
+                self.clyde.ai(self.puckMan.grid)
+                self.inky.ai(self.puckMan.grid)
+                self.pinky.ai(self.puckMan.grid)
             else:
                 self.blinky.dir = NONE
+                self.clyde.dir = NONE
+                self.inky.dir = NONE
+                self.pinky.dir = NONE
 
             self.score.render()
             self.pellet.pell_draw()
             self.puckMan.add()
-            self.blinky.add()
 
-            if self.puckMan.rect().colliderect(self.blinky.rect()):
+            self.blinky.add()
+            self.clyde.add()
+            self.inky.add()
+            self.pinky.add()
+
+            if self.puckMan.rect().colliderect(self.blinky.rect()) or self.puckMan.rect().colliderect(self.clyde.rect())\
+                    or self.puckMan.rect().colliderect(self.inky.rect()):
                 self.puckMan.dir = NONE
                 self.life = self.puckMan.lives
                 self.puckMan.die()
@@ -1059,9 +1339,11 @@ class Game():
         self.puckMan.gridcount = [8, 4]
         self.puckMan.grid = [14, 26]
         self.puckMan.reset = False
+        self.pell_count = 0
         self.puckMan.lives = self.life
         self.puckMan.image = pygame.image.load(self.puckMan.ani_l[self.puckMan.ani_pos])
         self.blinky = Blinky()
+        self.clyde = Clyde()
         self.down_press = self.up_press =  self.left_press = self.right_press = False
 
 if __name__ == '__main__':
