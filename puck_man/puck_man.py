@@ -142,7 +142,6 @@ class Path():
         count = 4
         for x in range(pr, 84 - pr + 1):
             temp = (x, r5y)
-            print 1
             self.path_list.append(temp)
             if count % 8 == 0:
                 self.pell_list.append(temp)
@@ -468,15 +467,28 @@ class Path():
             temp.append((pair[0], pair[1] + 24))
         self.pell_list = temp
 
+        # removes the parts of r5 that the ghost cannot go in.
+        self.g = self.path_list
+        self.gpath_list = self.path_list
+
+        for x in range(pr, 84 - pr*4 + 1):
+            temp = (x, r5y)
+            self.gpath_list.remove(temp)
+
+        for x in range(140 + pr*4, WINDOW_W - pr + 1):
+            temp = (x, r5y)
+            self.gpath_list.remove(temp)
+
+        self.path_list = self.g
         temp = []
         for pair in self.path_list:
             temp.append((pair[0], pair[1] + 24))
         self.path_list = temp
 
-        # ghost path
-        self.gpath_list = self.path_list
-
-
+        temp = []
+        for pair in self.gpath_list:
+            temp.append((pair[0], pair[1] + 24))
+        self.gpath_list = temp
 
     def draw_path(self):
         """
@@ -489,9 +501,10 @@ class Path():
         #for coordinate in self.pell_list:
         #    pygame.draw.line(displaySurface, RED, coordinate, coordinate)
 
-pell_path = Path().pell_list
-path = Path().path_list
-gpath = Path().gpath_list
+pathway = Path()
+pell_path = pathway.pell_list
+path = pathway.path_list
+gpath = pathway.gpath_list
 
 class Pellet(pygame.sprite.Sprite):
     """
@@ -813,7 +826,6 @@ class PuckMan(pygame.sprite.Sprite):
             self.ani_death_done = False
             self.dir = NONE
 
-
     def add(self):
         if self.dir == LEFT and not self.dead:
             if self.ani_speed == 0:
@@ -1029,7 +1041,7 @@ class Game():
 
             if self.puckMan.rect().colliderect(self.blinky.rect()):
                 self.puckMan.dir = NONE
-                self.counter = self.puckMan.lives
+                self.life = self.puckMan.lives
                 self.puckMan.die()
 
             if self.puckMan.reset:
@@ -1047,13 +1059,10 @@ class Game():
         self.puckMan.gridcount = [8, 4]
         self.puckMan.grid = [14, 26]
         self.puckMan.reset = False
-        self.puckMan.lives = self.counter - 1
+        self.puckMan.lives = self.life
         self.puckMan.image = pygame.image.load(self.puckMan.ani_l[self.puckMan.ani_pos])
         self.blinky = Blinky()
-
         self.down_press = self.up_press =  self.left_press = self.right_press = False
-
-
 
 if __name__ == '__main__':
     game = Game()
