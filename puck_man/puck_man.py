@@ -8,6 +8,7 @@ from time import sleep
 import pygame, sys
 import math
 from pygame.locals import *
+import time
 
 WINDOW_H = 292
 WINDOW_W = 224
@@ -506,6 +507,7 @@ pell_path = pathway.pell_list
 path = pathway.path_list
 gpath = pathway.gpath_list
 
+
 class Pellet(pygame.sprite.Sprite):
     """
     The pellets that that puck man eats.
@@ -516,6 +518,7 @@ class Pellet(pygame.sprite.Sprite):
         self.pos = pos
         self.alive = True
         self.score = score
+        self.big = False
 
     def kill(self):
         if self.alive:
@@ -549,8 +552,21 @@ class Small_Pellet(Pellet):
 
 class Big_Pellet(Pellet):
 
+    def __init__(self, pos, score):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = pos
+        self.big = True
+        self.alive = True
+        self.score = score
+
     def draw(self):
         pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 2)
+
+    def kill(self):
+        if self.alive:
+            self.score.add(10)
+            self.alive = False
+            chompSnd.play(0, 340, 0)
 
 
 class Ghost(pygame.sprite.Sprite):
@@ -574,8 +590,8 @@ class Ghost(pygame.sprite.Sprite):
         # center:  if it has reached the center point of the start box
         # vertic:  if the ghost is going vertical
         # ai:      if the ai is taking control
-        #           [relea, verti, ai]
-        self.flag = [False, False, False]
+        #           [relea, verti, ai, run]
+        self.flag = [False, False, False, False]
 
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -686,17 +702,17 @@ class Blinky(Ghost):
 
     def __init__(self):
         self.name = "Blinky"
-        self.pos = [100, 142]
+        self.pos = [WINDOW_W/2, 116]
         self.flag = [False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
         self.grid = [14, 18]
-        self.gridcounter =[6, 4]
+        self.gridcounter =[self.pos[0] % 8, 4]
         self.dead = False
         self.pre = "bl"
         self.ani_speed = 0
-        self.surf = pygame.Surface([12, 13])
+        self.surf = pygame.Surface([14, 13])
 
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -763,22 +779,23 @@ class Blinky(Ghost):
             self.dir = directions[index]
         elif self.flag[0]:
             self.release()
+
 
 class Inky(Ghost):
 
     def __init__(self):
         self.name = "Inky"
-        self.pos = [124, 142]
+        self.pos = [WINDOW_W/2 - 16, 142]
         self.flag = [False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
-        self.grid = [16, 18]
-        self.gridcounter = [4, 4]
+        self.grid = [12, 18]
+        self.gridcounter = [self.pos[0] % 8, self.pos[1] % 8]
         self.dead = False
         self.pre = "in"
         self.ani_speed = 0
-        self.surf = pygame.Surface([12, 13])
+        self.surf = pygame.Surface([14, 13])
 
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -845,22 +862,23 @@ class Inky(Ghost):
             self.dir = directions[index]
         elif self.flag[0]:
             self.release()
+
 
 class Pinky(Ghost):
 
     def __init__(self):
         self.name = "Pinky"
-        self.pos = [130, 142]
+        self.pos = [WINDOW_W/2 - 1, 142]
         self.flag = [False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
-        self.grid = [16, 18]
-        self.gridcounter = [4, 4]
+        self.grid = [14, 18]
+        self.gridcounter = [self.pos[0] % 8, 4]
         self.dead = False
         self.pre = "Pi"
         self.ani_speed = 0
-        self.surf = pygame.Surface([12, 13])
+        self.surf = pygame.Surface([14, 13])
 
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -880,14 +898,28 @@ class Pinky(Ghost):
         self.image = pygame.image.load(self.ani_l[self.ani_pos])
         self.add()
 
-    def ai(self, pmcoor):
+    def ai(self, pmcoor, pmdir):
 
         index = 3
         minimum = 40
         hyp = 0
 
+        tempcoor = pmcoor
         # if the ai is on
         if self.flag[2]:
+
+
+            # Switching the target tile based on the direction
+            if pmdir == UP:
+                tempcoor = [pmcoor[0]-4, pmcoor[1]-4]
+            elif pmdir == LEFT:
+                tempcoor = [pmcoor[0] - 4, pmcoor[1]]
+            elif pmdir == RIGHT:
+                tempcoor = [pmcoor[0] + 4, pmcoor[1]]
+            elif pmdir == DOWN:
+                tempcoor = [pmcoor[0], pmcoor[1] - 4]
+
+
             # Which directions are valid
             valid = [False, False, False, False]
             # direction must be on path and not the reverse of current direction
@@ -906,18 +938,18 @@ class Pinky(Ghost):
             for i in range(len(valid)):
                 if valid[i]:
                     if directions[i] == RIGHT:
-                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] - 1, 2) + math.pow(pmcoor[1]
+                        hyp = math.sqrt(math.pow(tempcoor[0] - self.grid[0] - 1, 2) + math.pow(tempcoor[1]
                                                                                               - self.grid[1], 2))
                     elif directions[i] == DOWN:
-                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                        hyp = math.sqrt(math.pow(tempcoor[0] - self.grid[0], 2) + math.pow(tempcoor[1]
                                                                                               - self.grid[1]-1, 2))
 
                     elif directions[i] == LEFT:
-                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0] + 1, 2) + math.pow(pmcoor[1]
+                        hyp = math.sqrt(math.pow(tempcoor[0] - self.grid[0] + 1, 2) + math.pow(tempcoor[1]
                                                                                               - self.grid[1], 2))
 
                     elif directions[i] == UP:
-                        hyp = math.sqrt(math.pow(pmcoor[0] - self.grid[0], 2) + math.pow(pmcoor[1]
+                        hyp = math.sqrt(math.pow(tempcoor[0] - self.grid[0], 2) + math.pow(tempcoor[1]
                                                                                               - self.grid[1]+1, 2))
 
                     if hyp < minimum:
@@ -928,21 +960,22 @@ class Pinky(Ghost):
         elif self.flag[0]:
             self.release()
 
+
 class Clyde(Ghost):
 
     def __init__(self):
         self.name = "Clyde"
-        self.pos = [112, 142]
+        self.pos = [WINDOW_W/2 + 15, 142]
         self.flag = [False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
-        self.grid = [15, 18]
-        self.gridcounter = [4, 4]
+        self.grid = [16, 18]
+        self.gridcounter = [self.pos[0] %8, 4]
         self.dead = False
         self.pre = "cl"
         self.ani_speed = 0
-        self.surf = pygame.Surface([12, 13])
+        self.surf = pygame.Surface([14, 13])
 
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -1061,6 +1094,8 @@ class PuckMan(pygame.sprite.Sprite):
 
         self.image = pygame.image.load(self.ani_l[self.ani_pos])
         self.add()
+
+
 
     def die(self):
         if not self.dead:
@@ -1202,19 +1237,23 @@ class Game():
     def __init__(self):
         pygame.init()
         self.score = Score()
+        self.ghostrun = False
         self.pell_count = 0
         self.puckMan = PuckMan("Puck Man", (WINDOW_W / 2, 188))
         self.blinky = Blinky()
         self.clyde = Clyde()
         self.inky = Inky()
         self.pinky = Pinky()
-        self.time_keeper = 0
-        # how many pellets pm has to eat till the ghosts come out
-        self.blinky_counter = 6
-        self.clyde_counter = 15
-        self.pinky_counter = 15
-        self.inky_counter = 15
 
+        self.time_keeper = 0
+        self.time_counter = 0
+
+        # how many pellets pm has to eat till the ghosts come out
+        self.blinky_counter = [6, 5]
+        self.clyde_counter = [15, 10]
+        self.pinky_counter = [20, 20]
+        self.inky_counter = [20, 20]
+        self.time_keeper = 0
         self.down_press = self.up_press = self.left_press = self.right_press = False
         self.pellet = Pellet((0, 0), self.score)
         self.pellet.pell_maker()
@@ -1274,23 +1313,30 @@ class Game():
                 if not move:
                     self.puckMan.move(self.puckMan.dir)
 
-            if self.pell_count == self.blinky_counter:
+            if self.pell_count == self.blinky_counter[0] or self.time_counter == self.blinky_counter[1]:
                 self.blinky.flag[0] = True
 
-            if self.pell_count == self.clyde_counter:
+            if self.pell_count == self.clyde_counter[0] or self.time_counter == self.clyde_counter[1]:
                 self.clyde.flag[0] = True
 
-            if self.pell_count == self.inky_counter:
+            if self.pell_count == self.inky_counter[0] or self.time_counter == self.inky_counter[1]:
                 self.inky.flag[0] = True
 
-            if self.pell_count == self.pinky_counter:
+            if self.pell_count == self.pinky_counter[0] or self.time_counter == self.pinky_counter[1]:
                 self.pinky.flag[0] = True
 
             #TODO replace with sprite group
             for pellet in pel_group:
                 if pellet.rect().colliderect(self.puckMan.rect()) and pellet.alive:
                     pellet.kill()
+                    if pellet.big:
+                        self.ghostrun = True
+
                     self.pell_count += 1
+
+            if self.ghostrun:
+                #iterate through ghosts
+                self.gflag[3] = True
 
             # add surfaces then render directly after
 
@@ -1302,7 +1348,8 @@ class Game():
                 self.blinky.ai(self.puckMan.grid)
                 self.clyde.ai(self.puckMan.grid)
                 self.inky.ai(self.puckMan.grid)
-                self.pinky.ai(self.puckMan.grid)
+                self.pinky.ai(self.puckMan.grid, self.puckMan.dir)
+
             else:
                 self.blinky.dir = NONE
                 self.clyde.dir = NONE
@@ -1327,11 +1374,18 @@ class Game():
             if self.puckMan.reset:
                 self.reset_death()
 
+            test_time = int(time.time())
+            if test_time - self.time_keeper > 1:
+                self.time_keeper = test_time
+                self.time_counter += 1
+
             pygame.display.update()
             FPSCLOCK.tick(FPS)
 
+    def load_level(self):
+        pass
+
     def reset_death(self):
-        self.puckMan.name = "Puck Man"
         self.puckMan.pos = (WINDOW_W / 2, 188 + 24)
         self.puckMan.thresh = 4
         self.puckMan.dir = 'static'
@@ -1339,12 +1393,17 @@ class Game():
         self.puckMan.gridcount = [8, 4]
         self.puckMan.grid = [14, 26]
         self.puckMan.reset = False
-        self.pell_count = 0
+        self.pell_count = self.time_counter = 0
         self.puckMan.lives = self.life
         self.puckMan.image = pygame.image.load(self.puckMan.ani_l[self.puckMan.ani_pos])
+
         self.blinky = Blinky()
         self.clyde = Clyde()
-        self.down_press = self.up_press =  self.left_press = self.right_press = False
+        self.inky = Inky()
+        self.pinky = Pinky()
+
+        self.down_press = self.up_press = self.left_press = self.right_press = False
+
 
 if __name__ == '__main__':
     game = Game()

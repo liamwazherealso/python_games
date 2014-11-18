@@ -94,8 +94,6 @@ class Simulation:
             pygame.draw.line(self.surface, (0, 255, 0), (v.vec[0] - self.scale * cos, self.window_h - v.vec[1]
                             - 1+self.scale * sin), (v.vec[0], self.window_h - v.vec[1]-1-self.scale*sin))
 
-            print "{:.7} {:7.2f} {:7.2f} {:7.2f}".format(v.vec, cos, sin, math.degrees(theta))
-        sys.exit(0)
 
 
 class Obj():

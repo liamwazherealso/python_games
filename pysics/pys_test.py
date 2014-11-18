@@ -26,6 +26,7 @@ sim.add_Vec(50, 0)
 sim.add_Vec(0, 50)
 sim.add_Vec(40, 20)
 sim.add_Vec(20, 40)
+
 def main():
 
     while True:  # main game loop
