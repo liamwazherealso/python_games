@@ -31,6 +31,9 @@ LEFT = 'left'
 RIGHT = 'right'
 NONE = 'none'
 
+BIG = 'big'
+SMALL = 'small'
+
 directions = [UP, DOWN, LEFT, RIGHT]
 pygame.mixer.init(44100, -16, 2, 2048)
 
@@ -65,6 +68,7 @@ class Path():
 
         self.path_list = []
         self.pell_list = []
+        self.big_pell_list = []
         self.gpath_list = []
 
         # the boundary is 4 pixels, path dia is 8
@@ -250,21 +254,34 @@ class Path():
             count += 1
 
         # adding columns
+
+        # This extra counter just pops up 4 times when I add the big pellets
+
         c1x = 20 - pr
         count = 0
+        count2 = 0
         for y in range(bd + pr, 76 - pr + 1):
             temp = (c1x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
-                self.pell_list.append(temp)
+                count2 += 1
+                if count2 == 3:
+                    self.big_pell_list.append(temp)
+                else:
+                    self.pell_list.append(temp)
             count += 1
 
         count = 0
+        count2 = 0
         for y in range(156 + pr, 196 - pr + 1):
             temp = (c1x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
-                self.pell_list.append(temp)
+                count2 += 1
+                if count2 == 4:
+                    self.big_pell_list.append(temp)
+                else:
+                    self.pell_list.append(temp)
             count += 1
 
         # looks like this is where the dead pixel is coming from.
@@ -430,23 +447,36 @@ class Path():
 
         c10x = WINDOW_W - 20 + pr
         count = 0
+        count2 = 0
         for y in range(bd + pr, 77 - pr):
             temp = (c10x, y)
+            count2 += 1
             self.path_list.append(temp)
             if count % 8 == 0:
-                self.pell_list.append(temp)
+                if count2 == 3:
+                    self.big_pell_list.append(temp)
+                else:
+                    self.pell_list.append(temp)
             count += 1
 
         count = 0
+        count2 = 0
         for y in range(156 + pr, 197 - pr):
             temp = (c10x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
-                self.pell_list.append(temp)
+                count2 += 1
+                print count2
+                if count2 == 4:
+                    print 8
+                    self.big_pell_list.append(temp)
+                else:
+                    self.pell_list.append(temp)
+
             count += 1
 
         count = 0
-        for y in range(204 + pr, WINDOW_H -36 - pr*2 - bd):
+        for y in range(204 + pr, WINDOW_H - 36 - pr*2 - bd):
             temp = (c10x, y)
             self.path_list.append(temp)
             if count % 8 == 0:
@@ -467,6 +497,11 @@ class Path():
         for pair in self.pell_list:
             temp.append((pair[0], pair[1] + 24))
         self.pell_list = temp
+
+        temp = []
+        for pair in self.big_pell_list:
+            temp.append((pair[0], pair[1] + 24))
+        self.big_pell_list = temp
 
         # removes the parts of r5 that the ghost cannot go in.
         self.g = self.path_list
@@ -496,7 +531,7 @@ class Path():
         debug: see if coordinates were correct
         :return:
         """
-        for coordinate in self.gpath_list:
+        for coordinate in self.big_pell_list:
             pygame.draw.line(displaySurface, GREEN, coordinate, coordinate)
 
         #for coordinate in self.pell_list:
@@ -506,6 +541,7 @@ pathway = Path()
 pell_path = pathway.pell_list
 path = pathway.path_list
 gpath = pathway.gpath_list
+print pathway.big_pell_list
 
 
 class Pellet(pygame.sprite.Sprite):
@@ -525,6 +561,7 @@ class Pellet(pygame.sprite.Sprite):
             self.score.add(10)
             self.alive = False
             chompSnd.play(0, 340, 0)
+        return SMALL
 
     def pell_maker(self):
         """
@@ -567,6 +604,7 @@ class Big_Pellet(Pellet):
             self.score.add(10)
             self.alive = False
             chompSnd.play(0, 340, 0)
+        return BIG
 
 
 class Ghost(pygame.sprite.Sprite):
@@ -703,7 +741,7 @@ class Blinky(Ghost):
     def __init__(self):
         self.name = "Blinky"
         self.pos = [WINDOW_W/2, 116]
-        self.flag = [False, False, False]
+        self.flag = [False, False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
@@ -713,6 +751,7 @@ class Blinky(Ghost):
         self.pre = "bl"
         self.ani_speed = 0
         self.surf = pygame.Surface([14, 13])
+        self.scatter = False
 
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -777,6 +816,17 @@ class Blinky(Ghost):
                         index = i
 
             self.dir = directions[index]
+
+            if self.flag[3]:
+                    if self.dir == UP and valid[1]:
+                        self.dir = DOWN
+                    elif self.dir == DOWN and valid[0]:
+                        self.dir = UP
+                    elif self.dir == LEFT and valid[3]:
+                        self.dir = RIGHT
+                    elif self.dir == RIGHT and valid[2]:
+                        self.dir = LEFT
+
         elif self.flag[0]:
             self.release()
 
@@ -786,7 +836,7 @@ class Inky(Ghost):
     def __init__(self):
         self.name = "Inky"
         self.pos = [WINDOW_W/2 - 16, 142]
-        self.flag = [False, False, False]
+        self.flag = [False, False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
@@ -796,7 +846,7 @@ class Inky(Ghost):
         self.pre = "in"
         self.ani_speed = 0
         self.surf = pygame.Surface([14, 13])
-
+        self.scatter = False
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
 
@@ -860,6 +910,17 @@ class Inky(Ghost):
                         index = i
 
             self.dir = directions[index]
+
+            if self.flag[3]:
+                    if self.dir == UP and valid[1]:
+                        self.dir = DOWN
+                    elif self.dir == DOWN and valid[0]:
+                        self.dir = UP
+                    elif self.dir == LEFT and valid[3]:
+                        self.dir = RIGHT
+                    elif self.dir == RIGHT and valid[2]:
+                        self.dir = LEFT
+
         elif self.flag[0]:
             self.release()
 
@@ -869,7 +930,7 @@ class Pinky(Ghost):
     def __init__(self):
         self.name = "Pinky"
         self.pos = [WINDOW_W/2 - 1, 142]
-        self.flag = [False, False, False]
+        self.flag = [False, False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
@@ -879,6 +940,7 @@ class Pinky(Ghost):
         self.pre = "Pi"
         self.ani_speed = 0
         self.surf = pygame.Surface([14, 13])
+        self.scatter = False
 
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -957,6 +1019,17 @@ class Pinky(Ghost):
                         index = i
 
             self.dir = directions[index]
+
+            if self.flag[3]:
+                    if self.dir == UP and valid[1]:
+                        self.dir = DOWN
+                    elif self.dir == DOWN and valid[0]:
+                        self.dir = UP
+                    elif self.dir == LEFT and valid[3]:
+                        self.dir = RIGHT
+                    elif self.dir == RIGHT and valid[2]:
+                        self.dir = LEFT
+
         elif self.flag[0]:
             self.release()
 
@@ -966,7 +1039,7 @@ class Clyde(Ghost):
     def __init__(self):
         self.name = "Clyde"
         self.pos = [WINDOW_W/2 + 15, 142]
-        self.flag = [False, False, False]
+        self.flag = [False, False, False, False]
         self.thresh = 0
         self.relpos = 0
         self.dir = 'static'
@@ -977,9 +1050,10 @@ class Clyde(Ghost):
         self.ani_speed = 0
         self.surf = pygame.Surface([14, 13])
 
+
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
-
+        self.scatter = False
         self.ani_u = glob.glob("img/" + self.pre + "_u*.png")
         self.ani_u.sort()
 
@@ -1040,6 +1114,17 @@ class Clyde(Ghost):
                         index = i
 
             self.dir = directions[index]
+
+            if self.flag[3]:
+                    if self.dir == UP and valid[1]:
+                        self.dir = DOWN
+                    elif self.dir == DOWN and valid[0]:
+                        self.dir = UP
+                    elif self.dir == LEFT and valid[3]:
+                        self.dir = RIGHT
+                    elif self.dir == RIGHT and valid[2]:
+                        self.dir = LEFT
+
         elif self.flag[0]:
             self.release()
 
@@ -1094,7 +1179,6 @@ class PuckMan(pygame.sprite.Sprite):
 
         self.image = pygame.image.load(self.ani_l[self.ani_pos])
         self.add()
-
 
 
     def die(self):
@@ -1245,6 +1329,9 @@ class Game():
         self.inky = Inky()
         self.pinky = Pinky()
 
+        self.scatter = False
+        self.scatter_time = 0
+
         self.time_keeper = 0
         self.time_counter = 0
 
@@ -1279,7 +1366,7 @@ class Game():
                         self.right_press = True
 
                     elif event.key == K_d:
-                        self.puckMan.die()
+                        self.run_scatter()
 
                 elif event.type == KEYUP:
                     if event.key == K_UP:
@@ -1328,20 +1415,15 @@ class Game():
             #TODO replace with sprite group
             for pellet in pel_group:
                 if pellet.rect().colliderect(self.puckMan.rect()) and pellet.alive:
-                    pellet.kill()
-                    if pellet.big:
-                        self.ghostrun = True
+                    if pellet.kill() == BIG:
+                        self.run_scatter()
 
                     self.pell_count += 1
 
-            if self.ghostrun:
-                #iterate through ghosts
-                self.gflag[3] = True
 
             # add surfaces then render directly after
 
             displaySurface.blit(self.background, (0, 0))
-            #Path().draw_path()
 
             # The ghost stop acting if the packman is ded
             if not self.puckMan.dead:
@@ -1374,16 +1456,46 @@ class Game():
             if self.puckMan.reset:
                 self.reset_death()
 
+            # this clause is executed every second
             test_time = int(time.time())
             if test_time - self.time_keeper > 1:
                 self.time_keeper = test_time
                 self.time_counter += 1
+
+                if self.scatter and self.scatter_time < 10:
+                    self.scatter_time += 1
+
+                elif self.scatter:
+                    self.run_scatter()
 
             pygame.display.update()
             FPSCLOCK.tick(FPS)
 
     def load_level(self):
         pass
+
+    def run_scatter(self):
+        """
+        Turns on scatter mode if it is called when scatter is not on, does the opposite in the other case
+        :return:
+        """
+        if self.scatter:
+            self.scatter = True
+
+            self.blinky.flag[3] = False
+            self.Inky.flag[3] = False
+            self.Pinky.flag[3] = False
+            self.Clyde.flag[3] = False
+        else:
+            self.scatter = False
+
+            #TODO Sprite grouping
+            self.blinky.flag[3] = True
+            self.inky.flag[3] = True
+            self.pinky.flag[3] = True
+            self.clyde.flag[3] = True
+
+        self.scatter_time = 0
 
     def reset_death(self):
         self.puckMan.pos = (WINDOW_W / 2, 188 + 24)

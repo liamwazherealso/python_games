@@ -66,12 +66,16 @@ class Simulation:
         self.scale = scale
         self.surface = surface
         self.vectors = []
+        self.objects = []
 
     def add_Vec(self, i, j):
         """
         Used to add vectors to my list and create a new vector
         """
         self.vectors.append(Vec(i, j))
+
+    def add_Obj(self, obj):
+        self.objects.append(obj)
 
     def draw_vectors(self):
         """
@@ -87,12 +91,18 @@ class Simulation:
 
             sin = math.sin(theta)
             cos = math.cos(theta)
+
             # draw main line
             pygame.draw.line(self.surface, (255, 0, 0), (v.pos[0], self.window_h - v.pos[1] - 1),
                              (v.vec[0] - self.scale * cos, self.window_h - v.vec[1] + self.scale * sin - 1))
+
             # draw green line to indicate direction
             pygame.draw.line(self.surface, (0, 255, 0), (v.vec[0] - self.scale * cos, self.window_h - v.vec[1]
-                            - 1+self.scale * sin), (v.vec[0], self.window_h - v.vec[1]-1-self.scale*sin))
+                            - 1 + self.scale * sin), (v.vec[0], self.window_h - v.vec[1]-1-self.scale*sin))
+
+    def upd(self):
+        for object in self.objects:
+            object.move()
 
 
 
