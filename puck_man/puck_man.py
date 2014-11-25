@@ -450,9 +450,9 @@ class Path():
         count2 = 0
         for y in range(bd + pr, 77 - pr):
             temp = (c10x, y)
-            count2 += 1
             self.path_list.append(temp)
             if count % 8 == 0:
+                count2 += 1
                 if count2 == 3:
                     self.big_pell_list.append(temp)
                 else:
@@ -466,9 +466,7 @@ class Path():
             self.path_list.append(temp)
             if count % 8 == 0:
                 count2 += 1
-                print count2
                 if count2 == 4:
-                    print 8
                     self.big_pell_list.append(temp)
                 else:
                     self.pell_list.append(temp)
@@ -539,9 +537,9 @@ class Path():
 
 pathway = Path()
 pell_path = pathway.pell_list
+big_pell_list = pathway.big_pell_list
 path = pathway.path_list
 gpath = pathway.gpath_list
-print pathway.big_pell_list
 
 
 class Pellet(pygame.sprite.Sprite):
@@ -571,6 +569,9 @@ class Pellet(pygame.sprite.Sprite):
         for coordinate in pell_path:
             Small_Pellet(coordinate, self.score).add(pel_group)
 
+        for coordinate in big_pell_list:
+            Big_Pellet(coordinate, self.score).add(pel_group)
+
     def pell_draw(self):
         for pellet in pel_group:
             if pellet.alive:
@@ -597,7 +598,7 @@ class Big_Pellet(Pellet):
         self.score = score
 
     def draw(self):
-        pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 2)
+        pygame.draw.circle(displaySurface, PELLET_COLOR, (self.pos[0], self.pos[1]), 4)
 
     def kill(self):
         if self.alive:
@@ -606,6 +607,8 @@ class Big_Pellet(Pellet):
             chompSnd.play(0, 340, 0)
         return BIG
 
+    def rect(self):
+        return pygame.Rect((self.pos[0] - 1, self.pos[1] - 1, 4, 4))
 
 class Ghost(pygame.sprite.Sprite):
     """
@@ -642,6 +645,9 @@ class Ghost(pygame.sprite.Sprite):
 
         self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
         self.ani_r.sort()
+
+        self.ani_death = glob.glob("img/g_d*")
+        self.ani_death.sort()
 
         self.ani_pos = 0
         self.ani_max = 1
@@ -713,20 +719,28 @@ class Ghost(pygame.sprite.Sprite):
     def add(self):
         self.move()
 
-        if self.dir == LEFT and not self.dead:
+        if self.dir == LEFT and not self.flag[3]:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_l[self.ani_pos])
-        elif self.dir == RIGHT and not self.dead:
+        elif self.dir == RIGHT and not self.flag[3]:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_r[self.ani_pos])
-        elif self.dir == UP and not self.dead:
+        elif self.dir == UP and not self.flag[3]:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_u[self.ani_pos])
-        elif self.dir == DOWN and not self.dead:
+        elif self.dir == DOWN and not self.flag[3]:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_d[self.ani_pos])
+        elif self.flag[3]:
+            if self.ani_speed == 0:
+                self.image = pygame.image.load(self.ani_death[self.ani_pos])
 
-        self.ani_pos = (self.ani_pos + 1) % 2
+
+        if self.flag[3]: # it is on run mode so the animation length is different
+            self.ani_pos = (self.ani_pos + 1) % 4
+        else:
+            self.ani_pos = (self.ani_pos + 1) % 2
+
         self.ani_speed = (self.ani_speed + 1) % 10
 
         self.surf.blit(self.image, (0, 0))
@@ -735,10 +749,21 @@ class Ghost(pygame.sprite.Sprite):
     def rect(self):
         return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
 
+    def reverse(self):
+            if self.dir == UP:
+                self.dir = DOWN
+            elif self.dir == DOWN:
+                self.dir = UP
+            elif self.dir == LEFT:
+                self.dir = RIGHT
+            elif self.dir == RIGHT:
+                self.dir = LEFT
+
 
 class Blinky(Ghost):
 
     def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
         self.name = "Blinky"
         self.pos = [WINDOW_W/2, 116]
         self.flag = [False, False, False, False]
@@ -764,6 +789,9 @@ class Blinky(Ghost):
 
         self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
         self.ani_r.sort()
+
+        self.ani_death = glob.glob("img/g_d*")
+        self.ani_death.sort()
 
         self.ani_pos = 0
         self.ani_max = 1
@@ -834,6 +862,7 @@ class Blinky(Ghost):
 class Inky(Ghost):
 
     def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
         self.name = "Inky"
         self.pos = [WINDOW_W/2 - 16, 142]
         self.flag = [False, False, False, False]
@@ -858,6 +887,9 @@ class Inky(Ghost):
 
         self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
         self.ani_r.sort()
+
+        self.ani_death = glob.glob("img/g_d*")
+        self.ani_death.sort()
 
         self.ani_pos = 0
         self.ani_max = 1
@@ -928,6 +960,7 @@ class Inky(Ghost):
 class Pinky(Ghost):
 
     def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
         self.name = "Pinky"
         self.pos = [WINDOW_W/2 - 1, 142]
         self.flag = [False, False, False, False]
@@ -953,6 +986,9 @@ class Pinky(Ghost):
 
         self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
         self.ani_r.sort()
+
+        self.ani_death = glob.glob("img/g_d*")
+        self.ani_death.sort()
 
         self.ani_pos = 0
         self.ani_max = 1
@@ -1037,6 +1073,7 @@ class Pinky(Ghost):
 class Clyde(Ghost):
 
     def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
         self.name = "Clyde"
         self.pos = [WINDOW_W/2 + 15, 142]
         self.flag = [False, False, False, False]
@@ -1062,6 +1099,9 @@ class Clyde(Ghost):
 
         self.ani_r = glob.glob("img/" + self.pre + "_r*.png")
         self.ani_r.sort()
+
+        self.ani_death = glob.glob("img/g_d*")
+        self.ani_death.sort()
 
         self.ani_pos = 0
         self.ani_max = 1
@@ -1232,7 +1272,6 @@ class PuckMan(pygame.sprite.Sprite):
         elif not self.dead:
             self.ani_pos += 1
 
-
         if self.ani_speed == 0:
             self.ani_speed = self.ani_speed_init
         else:
@@ -1328,7 +1367,11 @@ class Game():
         self.clyde = Clyde()
         self.inky = Inky()
         self.pinky = Pinky()
-
+        self.ghost_group = pygame.sprite.Group()
+        self.ghost_group.add(self.pinky)
+        self.ghost_group.add(self.inky)
+        self.ghost_group.add(self.clyde)
+        self.ghost_group.add(self.blinky)
         self.scatter = False
         self.scatter_time = 0
 
@@ -1417,15 +1460,13 @@ class Game():
                 if pellet.rect().colliderect(self.puckMan.rect()) and pellet.alive:
                     if pellet.kill() == BIG:
                         self.run_scatter()
-
                     self.pell_count += 1
 
 
             # add surfaces then render directly after
-
             displaySurface.blit(self.background, (0, 0))
 
-            # The ghost stop acting if the packman is ded
+            # The ghost need to stop moving if the puckman is ded
             if not self.puckMan.dead:
                 self.blinky.ai(self.puckMan.grid)
                 self.clyde.ai(self.puckMan.grid)
@@ -1447,11 +1488,14 @@ class Game():
             self.inky.add()
             self.pinky.add()
 
-            if self.puckMan.rect().colliderect(self.blinky.rect()) or self.puckMan.rect().colliderect(self.clyde.rect())\
-                    or self.puckMan.rect().colliderect(self.inky.rect()):
-                self.puckMan.dir = NONE
-                self.life = self.puckMan.lives
-                self.puckMan.die()
+            for ghost in self.ghost_group:
+                if self.puckMan.rect().colliderect(ghost) and not self.scatter:
+                    self.puckMan.dir = NONE
+                    self.life = self.puckMan.lives
+                    self.puckMan.die()
+
+                else:
+                    pass
 
             if self.puckMan.reset:
                 self.reset_death()
@@ -1462,10 +1506,10 @@ class Game():
                 self.time_keeper = test_time
                 self.time_counter += 1
 
-                if self.scatter and self.scatter_time < 10:
+                if self.scatter and self.scatter_time < 4:
                     self.scatter_time += 1
 
-                elif self.scatter:
+                elif self.scatter and self.scatter_time == 4:
                     self.run_scatter()
 
             pygame.display.update()
@@ -1480,20 +1524,17 @@ class Game():
         :return:
         """
         if self.scatter:
-            self.scatter = True
 
-            self.blinky.flag[3] = False
-            self.Inky.flag[3] = False
-            self.Pinky.flag[3] = False
-            self.Clyde.flag[3] = False
-        else:
             self.scatter = False
 
-            #TODO Sprite grouping
-            self.blinky.flag[3] = True
-            self.inky.flag[3] = True
-            self.pinky.flag[3] = True
-            self.clyde.flag[3] = True
+            for ghost in self.ghost_group:
+                ghost.flag[3] = False
+        else:
+            self.scatter = True
+
+            for ghost in self.ghost_group:
+                ghost.flag[3] = True
+                ghost.reverse()
 
         self.scatter_time = 0
 
