@@ -1,4 +1,4 @@
-#Did you know that the original name for Pac-Man was Puck-Man? You'd think it was because he looks like a hockey puck
+# Did you know that the original name for Pac-Man was Puck-Man? You'd think it was because he looks like a hockey puck
 # but it actually comes from the Japanese phrase 'Paku-Paku,' which means to flap one's mouth open and closed. They
 # changed it because they thought Puck-Man would be too easy to vandalize, you know, like people could just scratch off
 # the P and turn it into an F or whatever. - Scott Pilgrim vs. The world
@@ -626,6 +626,8 @@ class Ghost(pygame.sprite.Sprite):
         self.gridcounter = [4, 8]
         self.pre = " "
         self.ani_speed = 0
+        self.dead = False
+
 
         # release: if the ghost is still being released
         # center:  if it has reached the center point of the start box
@@ -663,7 +665,7 @@ class Ghost(pygame.sprite.Sprite):
         """
 
         # it is still in the ghost house and it is not at the center
-        if not self.flag[1] and self.flag[0]:
+        if not self.flag[1] and not self.flag[2]:
             # 112 is the x coor that the ghost must reach to start moving vertically out of the box
             dist = 112 - self.pos[0]
             if dist < 0:
@@ -682,6 +684,23 @@ class Ghost(pygame.sprite.Sprite):
                 self.dir = NONE
                 # ai is on and will stop release from being called
                 self.flag[2] = True
+
+    def unrelease(self):
+        """
+        release: gets ghost out of box after respond time.
+        :return:
+        """
+
+        # 112 is the x coor that the ghost must reach to start moving vertically out of the box
+        dist = 140 - self.pos[1]
+        if dist > 0:
+            self.dir = DOWN
+
+        elif dist == 0:
+            self.dead = False
+            self.flag[0] = True
+
+
 
     def move(self):
         """
@@ -720,31 +739,45 @@ class Ghost(pygame.sprite.Sprite):
         self.move()
 
         if self.dir == LEFT and not self.flag[3]:
-            if self.ani_speed == 0:
+            if self.ani_speed == 0 and not self.dead:
                 self.image = pygame.image.load(self.ani_l[self.ani_pos])
+
         elif self.dir == RIGHT and not self.flag[3]:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_r[self.ani_pos])
+
         elif self.dir == UP and not self.flag[3]:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_u[self.ani_pos])
+
         elif self.dir == DOWN and not self.flag[3]:
             if self.ani_speed == 0:
                 self.image = pygame.image.load(self.ani_d[self.ani_pos])
+
         elif self.flag[3]:
-            if self.ani_speed == 0:
+            if self.ani_speed == 0 and not self.dead:
                 self.image = pygame.image.load(self.ani_death[self.ani_pos])
 
+            elif self.ani_speed == 0 and self.dead:
+                self.image = pygame.image.load('img/eye_l.png')
 
-        if self.flag[3]: # it is on run mode so the animation length is different
+
+
+        if self.flag[3] and not self.dead:  # it is on run mode so the animation length is different
             self.ani_pos = (self.ani_pos + 1) % 4
+        elif self.dead:
+            self.ani_pos = 0
         else:
             self.ani_pos = (self.ani_pos + 1) % 2
 
         self.ani_speed = (self.ani_speed + 1) % 10
 
+        #TODO self.image.fill()
+        self.surf = pygame.Surface((13, 12))
+
+
         self.surf.blit(self.image, (0, 0))
-        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6))
+        displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6), special_flags=(pygame.BLEND_RGBA_ADD))
 
     def rect(self):
         return pygame.Rect(self.pos[0]-6, self.pos[1]-6, 12, 13)
@@ -771,7 +804,7 @@ class Blinky(Ghost):
         self.relpos = 0
         self.dir = 'static'
         self.grid = [14, 18]
-        self.gridcounter =[self.pos[0] % 8, 4]
+        self.gridcounter = [self.pos[0] % 8, 4]
         self.dead = False
         self.pre = "bl"
         self.ani_speed = 0
@@ -805,8 +838,14 @@ class Blinky(Ghost):
         minimum = 40
         hyp = 0
 
+        if self.dead:
+            pmcoor = [13, 14]
+
+        if self.dead and self.gridcounter == [3, 3]:
+            self.unrelease()
+
         # if the ai is on
-        if self.flag[2]:
+        elif self.flag[2]:
             # Which directions are valid
             valid = [False, False, False, False]
             # direction must be on path and not the reverse of current direction
@@ -874,7 +913,7 @@ class Inky(Ghost):
         self.dead = False
         self.pre = "in"
         self.ani_speed = 0
-        self.surf = pygame.Surface([14, 13])
+        self.surf = pygame.Surface([14, 13], pygame.SRCALPHA)
         self.scatter = False
         self.ani_d = glob.glob("img/" + self.pre + "_d*.png")
         self.ani_d.sort()
@@ -1034,6 +1073,7 @@ class Pinky(Ghost):
                 valid[3] = True
 
             for i in range(len(valid)):
+                # find the hyp of the current location of the ghost and the target tile
                 if valid[i]:
                     if directions[i] == RIGHT:
                         hyp = math.sqrt(math.pow(tempcoor[0] - self.grid[0] - 1, 2) + math.pow(tempcoor[1]
@@ -1488,14 +1528,16 @@ class Game():
             self.inky.add()
             self.pinky.add()
 
+
             for ghost in self.ghost_group:
                 if self.puckMan.rect().colliderect(ghost) and not self.scatter:
                     self.puckMan.dir = NONE
                     self.life = self.puckMan.lives
                     self.puckMan.die()
 
-                else:
-                    pass
+                elif self.puckMan.rect().colliderect(ghost) and self.scatter:
+                    ghost.dead = True
+
 
             if self.puckMan.reset:
                 self.reset_death()
@@ -1554,6 +1596,11 @@ class Game():
         self.clyde = Clyde()
         self.inky = Inky()
         self.pinky = Pinky()
+        self.ghost_group = pygame.sprite.Group()
+        self.ghost_group.add(self.pinky)
+        self.ghost_group.add(self.inky)
+        self.ghost_group.add(self.clyde)
+        self.ghost_group.add(self.blinky)
 
         self.down_press = self.up_press = self.left_press = self.right_press = False
 
