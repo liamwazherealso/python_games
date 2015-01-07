@@ -610,6 +610,7 @@ class Big_Pellet(Pellet):
     def rect(self):
         return pygame.Rect((self.pos[0] - 1, self.pos[1] - 1, 4, 4))
 
+
 class Ghost(pygame.sprite.Sprite):
     """
     Base class for characters, this is a child of the Sprite class defined in pygame, inheriting this allows us to use
@@ -627,7 +628,6 @@ class Ghost(pygame.sprite.Sprite):
         self.pre = " "
         self.ani_speed = 0
         self.dead = False
-
 
         # release: if the ghost is still being released
         # center:  if it has reached the center point of the start box
@@ -656,7 +656,6 @@ class Ghost(pygame.sprite.Sprite):
 
         self.image = pygame.image.load(self.ani_l[self.ani_pos])
         self.add()
-
 
     def release(self):
         """
@@ -687,7 +686,7 @@ class Ghost(pygame.sprite.Sprite):
 
     def unrelease(self):
         """
-        release: gets ghost out of box after respond time.
+        unrelease: gets ghost in the box after death.
         :return:
         """
 
@@ -699,8 +698,6 @@ class Ghost(pygame.sprite.Sprite):
         elif dist == 0:
             self.dead = False
             self.flag[0] = True
-
-
 
     def move(self):
         """
@@ -736,7 +733,18 @@ class Ghost(pygame.sprite.Sprite):
                     self.grid[0] += 1
 
     def add(self):
+        """
+        Method for rendering the ghost. Takes care of animation as well as rendering the sprite upon the surface.
+        :return:
+        """
         self.move()
+
+        if self.flag[3] and not self.dead:  # it is on run mode so the animation length is different
+            self.ani_pos = (self.ani_pos + 1) % 4
+        elif self.dead:
+            self.ani_pos = 0
+        else:
+            self.ani_pos = (self.ani_pos + 1) % 2
 
         if self.dir == LEFT and not self.flag[3]:
             if self.ani_speed == 0 and not self.dead:
@@ -761,21 +769,9 @@ class Ghost(pygame.sprite.Sprite):
             elif self.ani_speed == 0 and self.dead:
                 self.image = pygame.image.load('img/eye_l.png')
 
-
-
-        if self.flag[3] and not self.dead:  # it is on run mode so the animation length is different
-            self.ani_pos = (self.ani_pos + 1) % 4
-        elif self.dead:
-            self.ani_pos = 0
-        else:
-            self.ani_pos = (self.ani_pos + 1) % 2
-
         self.ani_speed = (self.ani_speed + 1) % 10
-
-        #TODO self.image.fill()
+        # self.image.fill()
         self.surf = pygame.Surface((13, 12))
-
-
         self.surf.blit(self.image, (0, 0))
         displaySurface.blit(self.surf, (self.pos[0] - 6, self.pos[1] - 6), special_flags=(pygame.BLEND_RGBA_ADD))
 
@@ -841,11 +837,9 @@ class Blinky(Ghost):
         if self.dead:
             pmcoor = [13, 14]
 
-        if self.dead and self.gridcounter == [3, 3]:
-            self.unrelease()
 
         # if the ai is on
-        elif self.flag[2]:
+        if self.flag[2]:
             # Which directions are valid
             valid = [False, False, False, False]
             # direction must be on path and not the reverse of current direction
@@ -897,6 +891,11 @@ class Blinky(Ghost):
         elif self.flag[0]:
             self.release()
 
+        if self.dead:
+            if self.grid == pmcoor and self.gridcounter == [0, 4]:
+
+                self.unrelease()
+
 
 class Inky(Ghost):
 
@@ -941,6 +940,11 @@ class Inky(Ghost):
         index = 3
         minimum = 40
         hyp = 0
+
+        if self.dead:
+            pmcoor = [13, 14]
+            if self.grid == pmcoor and self.gridcounter == [3, 3]:
+                self.unrelease()
 
         # if the ai is on
         if self.flag[2]:
@@ -1041,10 +1045,14 @@ class Pinky(Ghost):
         minimum = 40
         hyp = 0
 
+        if self.dead:
+            pmcoor = [13, 14]
+            if self.grid == pmcoor and self.gridcounter == [3, 3]:
+                self.unrelease()
+
         tempcoor = pmcoor
         # if the ai is on
         if self.flag[2]:
-
 
             # Switching the target tile based on the direction
             if pmdir == UP:
@@ -1154,6 +1162,11 @@ class Clyde(Ghost):
         index = 3
         minimum = 40
         hyp = 0
+
+        if self.dead:
+            pmcoor = [13, 14]
+            if self.grid == pmcoor and self.gridcounter == [3, 3]:
+                self.unrelease()
 
         # if the ai is on
         if self.flag[2]:
@@ -1450,6 +1463,8 @@ class Game():
 
                     elif event.key == K_d:
                         self.run_scatter()
+                        for ghost in self.ghost_group:
+                            ghost.dead = True
 
                 elif event.type == KEYUP:
                     if event.key == K_UP:
@@ -1499,6 +1514,7 @@ class Game():
             for pellet in pel_group:
                 if pellet.rect().colliderect(self.puckMan.rect()) and pellet.alive:
                     if pellet.kill() == BIG:
+
                         self.run_scatter()
                     self.pell_count += 1
 
@@ -1552,31 +1568,28 @@ class Game():
                     self.scatter_time += 1
 
                 elif self.scatter and self.scatter_time == 4:
-                    self.run_scatter()
+                    for ghost in self.ghost_group:
+                        ghost.flag[3] = True
 
             pygame.display.update()
             FPSCLOCK.tick(FPS)
-
-    def load_level(self):
-        pass
 
     def run_scatter(self):
         """
         Turns on scatter mode if it is called when scatter is not on, does the opposite in the other case
         :return:
-        """
-        if self.scatter:
 
+        if self.scatter:
             self.scatter = False
 
             for ghost in self.ghost_group:
                 ghost.flag[3] = False
-        else:
-            self.scatter = True
+        else:"""
+        self.scatter = True
 
-            for ghost in self.ghost_group:
-                ghost.flag[3] = True
-                ghost.reverse()
+        for ghost in self.ghost_group:
+            ghost.flag[3] = True
+            ghost.reverse()
 
         self.scatter_time = 0
 
