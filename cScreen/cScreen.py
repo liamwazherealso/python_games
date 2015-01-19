@@ -49,9 +49,9 @@ class Game():
                     pygame.quit()
                     sys.exit()
 
-            count = (count + 1) % 20
+            count = (count + 1) % 10
             if count == 0:
-                while not screenDraw.empty():# and self.breaker:
+                while not screenDraw.empty():
                     coor = screenDraw.get(True, 1)
                     pixArray[coor[0]][coor[1]] = (random.randint(0,255), random.randint(0,255),random.randint(0,255))  # fun
                     self.breaker = False
