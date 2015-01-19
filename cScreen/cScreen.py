@@ -4,6 +4,8 @@ from subprocess import Popen, PIPE
 from threading import Thread
 from Queue import Queue, Empty
 from os import getcwd
+import time
+import random
 
 WINDOW_H = 400
 WINDOW_W = 400
@@ -13,40 +15,46 @@ FPSCLOCK = pygame.time.Clock()
 displaySurface = pygame.display.set_mode((WINDOW_W, WINDOW_H))
 pixArray = pygame.PixelArray(displaySurface)
 
-screenDraw = Queue()  # setup for gathering points to turn on from main.c
+screenDraw = Queue(maxsize=20)  # setup for gathering points to turn on from main.c
 
-def stream_watcher(identifier, stream):
-    for line in stream: # take in string
-        if line == 'break\n':  # if the new pixels are all added to the queue, close the thread
-            break
-        else:
-            line = line.split()
-            screenDraw.put([int(line[0]), int(line[1])])  # each line has "# #" format"""
 
-    if not stream.closed:
-        stream.close()
 
 
 class Game():
     def __init__(self):
         pygame.init()
-        self.end = False
+        self.breaker = False
+
+    def stream_watcher(self, identifier, stream):
+
+        for line in stream: # take in string
+
+            if line == 'break\n':  # if the new pixels are all added to the queue, close the thread
+                self.breaker = True
+            else:
+                line = line.split()
+                screenDraw.put([int(line[0]), int(line[1])], 1)  # each line has "# #" format"""
+
 
     def main(self):
-        while True and not self.end:
-            proc = Popen(getcwd() + '/main', stdout=PIPE)
+        self.proc = Popen(getcwd() + '/main', stdout=PIPE)
+        Thread(target=self.stream_watcher, name='stdout-watcher', args=('STDOUT', self.proc.stdout)).start()
+        count = 0
 
-            Thread(target=stream_watcher, name='stdout-watcher', args=('STDOUT', proc.stdout)).start()
+        while True:
 
             for event in pygame.event.get():
                 if event.type == QUIT:
-                    self.end = True
+                    self.proc.kill()
                     pygame.quit()
                     sys.exit()
 
-            while not screenDraw.empty():
-                coor = screenDraw.get()
-                pixArray[coor[0]][coor[1]] = (255, 0, 255)
+            count = (count + 1) % 20
+            if count == 0:
+                while not screenDraw.empty():# and self.breaker:
+                    coor = screenDraw.get(True, 1)
+                    pixArray[coor[0]][coor[1]] = (random.randint(0,255), random.randint(0,255),random.randint(0,255))  # fun
+                    self.breaker = False
 
             pygame.display.update()
             FPSCLOCK.tick(FPS)
